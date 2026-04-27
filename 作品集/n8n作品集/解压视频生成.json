@@ -1,0 +1,349 @@
+{
+  "name": "实战5.解压视频生成",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -1296,
+        -160
+      ],
+      "id": "22693d49-4b21-4eda-9087-9a0d58fd3bf6",
+      "name": "When chat message received",
+      "webhookId": "9604d4f5-827b-4194-bc28-254aacacc9c4"
+    },
+    {
+      "parameters": {
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=你是一位专门创作令人奇感满足的3D动画ASMR内容的爆款策略师。你的任务是构思一个完整、原创且具备极致传播力和循环观看价值的视频概念，其中展示一件非传统的工具完美地切割一个超写实物体，从而揭露其完全出乎意料、视觉震撼的内部结构。这个概念必须包含以下三个核心元素：\n1）被切割物体：一个看似熟悉却拥有独特、不可思议特性的物品；\n2）切割工具：一件视觉上引人注目、并非普通刀具的切割器具；\n3）惊喜内部：引爆传播的关键——一个令人着迷的材质或微型场景。整个视频需以超高清8K画质呈现，采用浅景深特写镜头捕捉电影般的光影与细腻质感，每一帧切割都精准逼真，伴随清脆的高保真ASMR音效——包括工具与物体接触时的摩擦声、内部材质暴露时的独特声响，以及整个交互过程中干净利落、令人极度满足的物理动态。"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        -1104,
+        -160
+      ],
+      "id": "2c25f75d-15e2-4359-9063-6352729caf83",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        -1104,
+        64
+      ],
+      "id": "e6558e92-7d8a-4862-8ac6-a63fa153b883",
+      "name": "DeepSeek Chat Model"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n\t\"prompt1\":\"your prompt\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -960,
+        64
+      ],
+      "id": "7d291254-6ccd-4133-a9c5-b8f6e2324a39",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.kie.ai/api/v1/veo/generate",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer <token>"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "prompt",
+              "value": "={{ $json.output.prompt1 }}"
+            },
+            {
+              "name": "model",
+              "value": "veo3_fast"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -752,
+        -160
+      ],
+      "id": "d1af47f6-42ab-4b4a-b2a0-aa0714f1e972",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "amount": 10
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -560,
+        -160
+      ],
+      "id": "e19343c0-da9b-4f47-b993-b14f366ecb92",
+      "name": "Wait",
+      "webhookId": "fd8086ae-7177-4868-94d3-0ec9101d9d3b"
+    },
+    {
+      "parameters": {
+        "url": "https://api.kie.ai/api/v1/veo/record-info",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "taskId",
+              "value": "={{ $json.data.taskId }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -352,
+        -160
+      ],
+      "id": "ab3a3b92-a5c7-45ca-8d5f-2b59a3c4cc22",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "5502b51b-50bb-486a-82a1-74dc87e146f3",
+              "leftValue": "={{ $json.data.successFlag }}",
+              "rightValue": 1,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -144,
+        -160
+      ],
+      "id": "f8b074dc-a3e3-4674-b914-192b387f33e1",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1gxRlS3GBO5s1CsDL1AFf-T2IWCYdl5Z1BJCrxAoCsUU",
+          "mode": "list",
+          "cachedResultName": "解压视频生成结果",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1gxRlS3GBO5s1CsDL1AFf-T2IWCYdl5Z1BJCrxAoCsUU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "我的视频",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1gxRlS3GBO5s1CsDL1AFf-T2IWCYdl5Z1BJCrxAoCsUU/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "视频创意": "= {{ $('When chat message received').item.json.chatInput }}",
+            "完整提示词": "={{ $('AI Agent').item.json.output.prompt1 }}",
+            "视频生成地址": "={{ $('HTTP Request1').item.json.data.response.resultUrls[0] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "视频创意",
+              "displayName": "视频创意",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "完整提示词",
+              "displayName": "完整提示词",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "视频生成地址",
+              "displayName": "视频生成地址",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        128,
+        -176
+      ],
+      "id": "70670404-4727-4826-8bed-12a04ce0ab32",
+      "name": "Append row in sheet"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "9b6b2d25-efb4-40ba-b057-ec5cabea0cc2",
+  "meta": {
+    "instanceId": "4ec3133c8d628113a824c66a73c5bdda7b94b0762c5189e937dc7ec53c5a43ee"
+  },
+  "id": "9iaammRor-fODMoMu9Eu2",
+  "tags": []
+}

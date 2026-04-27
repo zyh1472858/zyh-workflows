@@ -1,0 +1,1811 @@
+{
+  "name": "实战11-AI小猫故事视频",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        496,
+        48
+      ],
+      "id": "3429b0b5-911d-4d7f-9ee2-8b6857b1ee69",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1712,
+        -176
+      ],
+      "id": "cf371a81-595a-4cce-9af5-d51fb90160ec",
+      "name": "Merge2"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a06c719c-5c14-4770-97ac-255909a67649",
+              "name": "obj",
+              "value": "={{ $json.speak }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        992,
+        -256
+      ],
+      "id": "9c1384b7-bafc-4fa1-aa83-ae1a0236f24c",
+      "name": "口播文案"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Add a new field called 'myNewField' to the JSON of the item\n$input.item.json.output = $input.item.json.output.replaceAll(\"```json\",\"\").replaceAll(\"```\",\"\");\n$input.item.json.output = JSON.parse($input.item.json.output);\n\nreturn $input.item;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        160,
+        -224
+      ],
+      "id": "cc2fd7c9-2034-4cf8-adfc-47b302149087",
+      "name": "格式化",
+      "executeOnce": false,
+      "alwaysOutputData": false,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "output.video",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        464,
+        -240
+      ],
+      "id": "ffe344e2-fe27-4c8a-84a8-094ec4d0e5c6",
+      "name": "拆分剪辑"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "f388c984-203e-4af9-b188-869717ce948b",
+        "options": {
+          "responseData": "success"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -880,
+        -224
+      ],
+      "id": "61a82b52-267f-4c75-aec2-5dee6e44c0b1",
+      "name": "Webhook",
+      "webhookId": "f388c984-203e-4af9-b188-869717ce948b"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "obj"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1424,
+        -256
+      ],
+      "id": "74b3ec17-2680-45ab-bc6c-5fa234f9af87",
+      "name": "Aggregate",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Webhook').item.json.body.content }}",
+        "options": {
+          "systemMessage": "=### **AI爆款拟人化短视频拉片脚本生成提示词 (V5.1 - 固定角色版)**\n\n**# 角色 (Role)**\n你是一位经验丰富的病毒式动画短视频总导演。你正在为一个以**固定角色**为核心的短视频系列进行创作。你的任务是基于我提供的【故事核心】，为这组特定角色设计一部充满情感冲击和叙事节奏的爆款短剧,请在10个镜头完成创作。\n\n**# 核心创作原则 (Core Creative Principles)**\n1.  **深度拟人化：** “披着猫狗外衣的人类故事”，情感与动机源于真实生活。\n2.  **强烈情感弧光：** 引导观众经历从**共情 -> 冲突 -> 挣扎 -> 顿悟 -> 和解/胜利**的完整情绪旅程。\n3.  **视觉叙事至上：** 零台词，依赖**微表情**、**肢体语言**、**场景互动**和**象征性视觉元素**。\n4.  **“爽点”与“暖点”结合：** 结局可以是逆袭打脸，也可以是温情和解或自我超越。\n\n**# 关键指令：固定角色设计卡 (Fixed Character Design Card)**\n**这是本模板的核心。** 以下是我们故事宇宙的**固定主角和反派**。在生成脚本时，你必须**始终、无一例外地**使用这些角色的设定和括号内的“锚定描述”来确保100%的视觉一致性。\n\n*   **主角1 (大哥): 猫爸**\n    *   **锚定描述:** `(一只肌肉发达的猫爸爸,小猫的爸爸，穿着黄色T恤和黑色运动裤)`\n*   **主角2 (小弟): 猫宝**\n    *   **锚定描述:** `(一只粉色小猫，戴着红色尿布，有着大大的蓝色眼睛)`\n*   **反派1 (大哥): 白马**\n    *   **锚定描述:** `(一只成年的白马，穿着黑色T恤，戴着黑色墨镜和金色大项链)`\n*   **反派2 (小弟): 小白马**\n    *   **锚定描述:** `(一只幼年小白马，戴着黄色尿布，表情嚣张)`\n\n**# 文生图描述词执行规则 (Text-to-Image Prompt Execution Rules)**\n在撰写【文生图描述词】时，你必须严格遵守以下规则：\n\n1.  **强制锚定：** 当镜头中出现上述任何一个角色时，**必须**在描述该角色后，紧跟其对应的**“锚定描述”**。\n2.  **精确引用：** **只描述当前镜头中实际出现的角色**。例如，如果镜头中只有猫宝，就绝不能提及或描述猫爸。\n3.  **两段式结构：**\n    *   **第一部分（自然语言描述）：** 用一个连贯的句子精准描述切换到该镜头后的**第一帧画面**（主体+行为+环境），并严格执行“强制锚定”规则。\n    *   **第二部分（艺术风格标签）：** 用逗号分隔的短词来定义**美学风格**（3d写实风格、色彩、光影、构图、渲染/细节）。\n\n**# 图生视频描述词 (Image-to-Video Prompt)**:\n核心原则: 基于“文生图”生成的静态画面，描述这个镜头内的 所有动态变化。\n标准格式: 【时长】5秒。【景别】...。【运镜】...。【主体动作】...。【其他动态】...\n景别 (Framing): 远景、全景、中景、近景、特写、大特写。\n运镜 (Camera Movement):\n固定镜头: 无运镜。\n推 (Push-in): 镜头向前移动，靠近主体。\n拉 (Pull-out): 镜头向后移动，远离主体。\n摇 (Pan): 镜头在原地水平转动（左摇/右摇）。\n移 (Truck/Dolly): 整个摄影机平行移动（左移/右移）。\n升/降 (Crane/Pedestal): 整个摄影机垂直移动。\n跟拍 (Follow Shot): 镜头跟随移动的主体。\n旋转 (Roll) / 变焦 (Zoom) 等。\n主体动作 (Subject Action): 详细描述画面中人物/动物/物体的具体动作。例如：成年蓝猫A从打哈欠变为缓慢地舔自己的爪子，幼年蓝猫B的耳朵动了一下，然后翻了个身。\n其他动态 (Other Dynamics): 描述背景中的次要动态，如 窗帘被微风吹动，背景中电视屏幕在闪烁。\n示例: 【时长】5秒。【景别】中景。【运镜】从右向左缓慢平移，最终聚焦在幼猫B上。【主体动作】成年白猫A保持舔爪子的动作，幼猫B翻身后，好奇地睁开眼睛看着镜头。【其他动态】背景中的一缕灰尘在光线中飘动。\n\n---\n\n**# 格式与指令 (Format & Instruction)**\n现在，请严格按照以上**V5.1版**的全部规则，为我提供的【故事核心】创作一份完整的拉片脚本。\n\n1.  **无需再创建角色卡**，直接使用上面已固定的角色设定。\n2. 遵循下面的格式\n\n{\n    \"video\": [\n        {\n            \"scene\": \"猫爸(一只肌肉发达的蓝猫爸爸，穿着黄色T恤和黑色运动裤)，正小心翼翼地擦拭着摩天大楼的窗户，猫宝(一只粉色小猫，戴着红色尿布，有着大大的蓝色眼睛)，在地面上欢快地玩耍；3d写实风格，色彩鲜艳，光影明亮，构图平衡，渲染细腻\",\n            \"action\": \"【时长】5秒。【景别】全景。【运镜】固定镜头。【主体动作】猫爸继续擦拭窗户，猫宝在地面上跑来跑去。【其他动态】大楼外的风吹动着窗帘。\",\n     \"speak\":\"猫爸爸正在小心翼翼的擦拭着摩天大楼的窗户，小猫在地面欢快的玩耍。\"\n        }\n    ]\n}\n\n\n\n## 输出格式（直接输出json文本，不要换行和markdown格式，文生图描述词、图生视频描述词分别换成scene和action，视频台词换成speak.）\n{\n\"video\":[\n{\"scene\":\"xxxxx\",\"action\":\"xxxx\",\"speak\":\"xxxxx\"}\n...\n]\n}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        -176,
+        -224
+      ],
+      "id": "63d3e5ed-6be6-457e-8563-4e2266b98694",
+      "name": "分镜剪辑（中文）2"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        -192,
+        16
+      ],
+      "id": "d581a342-ba49-4acf-a20f-9df8aa75cfca",
+      "name": "DeepSeek Chat Model",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "w2l1BwFih5cyUWGb",
+          "name": "DeepSeek account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## 视频主工作流 ",
+        "height": 80,
+        "width": 3680
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1008,
+        -432
+      ],
+      "typeVersion": 1,
+      "id": "6ea97763-5c4a-4864-ad50-9d924f7d5903",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "P5UtF55HVj5xoFz9",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/P5UtF55HVj5xoFz9",
+          "cachedResultName": "视频生成子工作流"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "action": "={{ $json.action }}",
+            "scene": "={{ $json.scene }}",
+            "model": "火山引擎"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "scene",
+              "displayName": "scene",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "model",
+              "displayName": "model",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        816,
+        112
+      ],
+      "id": "32b8898d-c110-4c1f-8ad1-880b6ce58a9b",
+      "name": "生成视频子工作流",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "content": "## 飞书Http请求传入/数据传入 ",
+        "height": 720,
+        "width": 512
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1008,
+        -320
+      ],
+      "typeVersion": 1,
+      "id": "3dbb742e-27fc-40f6-8913-0bb805f640b6",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## 生成视频的多个分镜头脚本数据",
+        "height": 704,
+        "width": 784,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -464,
+        -304
+      ],
+      "typeVersion": 1,
+      "id": "d70c5d7e-72ed-456c-9f3d-25c42276eb4e",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## 将分镜生成对应的图片和视频",
+        "height": 704,
+        "width": 1216,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        352,
+        -304
+      ],
+      "typeVersion": 1,
+      "id": "485685da-8d19-460c-a22a-d8cb3d22f3e7",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "command": "=mkdir -p /home/node/.n8n-files/Videos/n8n生成/{{ $json.title }}"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        -432,
+        -224
+      ],
+      "id": "91108d06-dbf6-41b6-9e18-d385ba7dc3d6",
+      "name": "创建主题文件夹"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.videoURL }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1024,
+        128
+      ],
+      "id": "6f0065b9-1148-40ae-bd54-9d063a7bcbda",
+      "name": "下载视频"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/home/node/.n8n-files/Videos/n8n生成/{{ $('Edit Fields').item.json.title }}/{{ $('Loop Over Items').context[\"currentRunIndex\"]+1}}.mp4",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        1232,
+        144
+      ],
+      "id": "1179fcaa-0fc4-46e0-ab1e-95c8eedf7c82",
+      "name": "保存到磁盘1"
+    },
+    {
+      "parameters": {
+        "amount": 30
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1648,
+        80
+      ],
+      "id": "918b0464-977a-4f45-846f-4f6f3f3acae9",
+      "name": "Wait1",
+      "webhookId": "766cf86d-2122-4d30-b6df-cc8dc3c14512"
+    },
+    {
+      "parameters": {
+        "url": "=http://host.docker.internal:8080/api/v1/tasks/{{ $('本地视频合并').item.json.data.task_id }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1840,
+        48
+      ],
+      "id": "7b0a0791-226d-4771-97a8-04055088ca5a",
+      "name": "查询视频状态1"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.data.videos[0] }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2272,
+        64
+      ],
+      "id": "709f5101-1a3b-43b7-8812-82bf478cf196",
+      "name": "下载视频1"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/home/node/.n8n-files/Videos/n8n生成/{{ $('Edit Fields').item.json.title }}/{{ $('Webhook').item.json.body.title }}.mp4",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        2480,
+        64
+      ],
+      "id": "60aba499-dc00-4f1f-8cd7-14e821653cb4",
+      "name": "保存到磁盘3"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "bbb71022-9853-4878-802e-6a638eee07c3",
+                    "leftValue": "={{ $json.data.state }}",
+                    "rightValue": 1,
+                    "operator": {
+                      "type": "number",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "成功"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "faba58a9-ff8c-488f-9ccf-e9db236fa177",
+                    "leftValue": "={{ $json.data.state }}",
+                    "rightValue": 4,
+                    "operator": {
+                      "type": "number",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "生成中"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.data.state }}",
+                    "rightValue": -1,
+                    "operator": {
+                      "type": "number",
+                      "operation": "equals"
+                    },
+                    "id": "38cddb58-ba4f-4ded-8b11-4e1d06d46d0d"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "失败"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        2048,
+        80
+      ],
+      "id": "2f717700-7824-4745-8243-ef8ea56a57ba",
+      "name": "Switch1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 获取上一步传入的数据\nconst inputData = $input.all();\n\n// 转换每个项目\nconst outputData = inputData.map(item => {\n  const oldPath = item.json.fileName;\n  const newPath = oldPath.replace(\n    \"/home/node/.n8n-files/Videos/\", \n    \"/MoneyPrinterTurbo/storage/local_videos/\"\n  );\n  \n  return {\n    json: {\n      provider: \"local\",\n      url: newPath,\n      duration: 0\n    }\n  };\n});\n\n// 返回转换后的数据\nreturn outputData;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1232,
+        -48
+      ],
+      "id": "10ce6c7f-8dbe-40c8-8e19-1edf9ed0ee8b",
+      "name": "本地素材整理1"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1424,
+        -80
+      ],
+      "id": "36c25ac0-a8bc-42c1-ab9e-2d82ab0dc4d7",
+      "name": "Aggregate1",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b1989b74-c6e7-4b2a-8024-7f093da9945d",
+              "name": "title",
+              "value": "={{ $json.body.title }}",
+              "type": "string"
+            },
+            {
+              "id": "cb6cb53e-6981-44bd-928b-85cbf853cb7c",
+              "name": "recordId",
+              "value": "={{ $json.body.record_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -672,
+        -224
+      ],
+      "id": "9e8bdccb-9e72-4737-9865-b17f240cc90e",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "content": "## 视频合并和保存",
+        "height": 704,
+        "width": 1104,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1584,
+        -304
+      ],
+      "typeVersion": 1,
+      "id": "75817a08-ed5c-4b8d-a113-8acc9ea9c3ce",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8080/api/v1/videos",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "= {\n    \"video_subject\": \"{{ $('Edit Fields').item.json.title }}\",\n    \"video_script\": \"{{ $json.obj }}\",\n    \"video_terms\": \"\",\n    \"video_aspect\": \"9:16\",\n    \"video_concat_mode\": \"sequential\",\n    \"video_transition_mode\": \"None\",\n    \"video_clip_duration\": 5,\n    \"video_count\": 1,\n    \"video_source\": \"local\",\n    \"video_materials\":{{ $json.data.toJsonString() }},\n    \"custom_audio_file\": null,\n    \"video_language\": \"\",\n    \"voice_name\": \"siliconflow:FunAudioLLM/CosyVoice2-0.5B:alex-Male\",\n    \"voice_volume\": 1.0,\n    \"voice_rate\": 1.0,\n    \"bgm_type\": \"random\",\n    \"bgm_file\": \"\",\n    \"bgm_volume\": 0.2,\n    \"subtitle_enabled\": true,\n    \"subtitle_position\": \"bottom\",\n    \"custom_position\": 70.0,\n    \"font_name\": \"MicrosoftYaHeiBold.ttc\",\n    \"text_fore_color\": \"#FFFFFF\",\n    \"text_background_color\": true,\n    \"font_size\": 60,\n    \"stroke_color\": \"#000000\",\n    \"stroke_width\": 1.5,\n    \"n_threads\": 2,\n    \"paragraph_number\": 1\n} ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2016,
+        -176
+      ],
+      "id": "f16a382d-3c75-483e-8460-fb3d2d76bed7",
+      "name": "本地视频合并"
+    },
+    {
+      "parameters": {
+        "resource": "bitable",
+        "operation": "bitable:parseUrl",
+        "url": "https://xvtjtpdrgh1.feishu.cn/base/FNDvbbRKja0GsGsGbjwcAmOfn1f?table=tblas6liroBPsRdS&view=vew15USgZ3"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        2288,
+        272
+      ],
+      "id": "ad244635-22d5-4ec0-824a-8bf5c49113ba",
+      "name": "解析地址",
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "4lRfXH7rUnhGOUH0",
+          "name": "n8n应用1"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "bitable",
+        "operation": "bitable:table:record:update",
+        "app_toke": "={{ $json.app_token }}",
+        "table_id": "={{ $json.table_id }}",
+        "record_id": "recuTQYplwipGG",
+        "body": "={\"fields\":{\n  \"视频下载地址\":\"{{ $('下载视频1').item.json.data.videos[0] }} \",\n  \"状态\":\"待发布\"\n}}"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        2480,
+        272
+      ],
+      "id": "df237cd7-8507-43e3-965f-2115b5c68a07",
+      "name": "更新状态",
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "4lRfXH7rUnhGOUH0",
+          "name": "n8n应用1"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "webn8n.666103.xyz",
+            "user-agent": "Go-http-client/2.0",
+            "content-length": "1158",
+            "accept-encoding": "gzip, br",
+            "cdn-loop": "cloudflare; loops=1",
+            "cf-connecting-ip": "123.58.10.238",
+            "cf-ipcountry": "CN",
+            "cf-ray": "9c510ccddb1aa55c-AMS",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-warp-tag-id": "143381b6-8775-47d4-a98d-af7eed706856",
+            "connection": "keep-alive",
+            "content-type": "application/json",
+            "x-base-automation-ua": "automation/1.0.0",
+            "x-forwarded-for": "123.58.10.238",
+            "x-forwarded-proto": "https",
+            "x-tt-env": "prod",
+            "x-tt-logid": "02176960917897400000000000000000000ffffad28f129513733"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "record_id": "recuTQYplwipGG",
+            "content": "猫爸，一只肌肉发达的蓝猫，正小心翼翼地擦拭着摩天大楼的窗户，而他那戴着小鱼图案尿布的小猫宝则在地面上欢快地玩耍。突然，白龙马大哥带着他的小弟白龙马小弟出现了，小白龙马调皮地咬断了猫爸的绳子。猫爸从高空坠落，重重地摔在地上，他的腿受了伤，只能依靠拐杖走路。\n小猫宝看到爸爸受伤，眼中充满了泪水，他举起一块写着“喜欢点个关注”的牌子，希望能得到帮助。得到网友们的支持后，小猫宝拿起一把大锤子，径直走向一辆粉色的跑车，那是白龙马大哥的。小猫宝对着跑车一顿猛砸，直到车辆冒烟。\n白龙马大哥看到自己的豪车被毁，气急败坏地拿着刀冲向小猫宝。但小猫宝早有准备，他拿出一堆电线，似乎是要修理什么东西。最终，小猫宝成功地让白龙马大哥和他的小弟得到了应有的教训。",
+            "title": "小猫和小狗大战300回合",
+            "episodeNumber": 0
+          },
+          "webhookUrl": "https://webn8n.666103.xyz/webhook-test/f388c984-203e-4af9-b188-869717ce948b",
+          "executionMode": "test"
+        }
+      }
+    ],
+    "Edit Fields": [
+      {
+        "json": {
+          "title": "小猫和小狗大战300回合",
+          "recordId": "recuTQYplwipGG"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "拆分剪辑": [
+      {
+        "json": {
+          "scene": "猫爸(一只肌肉发达的猫爸爸，小猫的爸爸，穿着黄色T恤和黑色运动裤)正小心翼翼地擦拭着摩天大楼的窗户，猫宝(一只粉色小猫，戴着红色尿布，有着大大的蓝色眼睛)在地面上欢快地玩着一个毛线球；3d写实风格，色彩鲜艳，光影明亮，构图平衡，渲染细腻",
+          "action": "【时长】5秒。【景别】全景。【运镜】固定镜头。【主体动作】猫爸在高空认真擦拭玻璃，猫宝在地面用爪子拨弄毛线球。【其他动态】微风轻轻吹动猫爸的毛发和猫宝的尿布边缘。",
+          "speak": "猫爸爸正在小心翼翼的擦拭着摩天大楼的窗户，小猫在地面欢快的玩耍。"
+        }
+      },
+      {
+        "json": {
+          "scene": "白马(一只成年的白马，穿着黑色T恤，戴着黑色墨镜和金色大项链)和小白马(一只幼年小白马，戴着黄色尿布，表情嚣张)出现在大楼下方，白马指着高处的猫爸，露出不怀好意的笑容；3d写实风格，色彩对比强烈，光影戏剧化，低角度仰拍，渲染细腻",
+          "action": "【时长】3秒。【景别】中景。【运镜】从左向右缓慢平移，从白马摇到小白马。【主体动作】白马指着上方，小白马顺着方向看去，然后露出坏笑。【其他动态】背景中猫宝仍在玩耍，未察觉危险。",
+          "speak": "突然，白龙马大哥带着他的小弟白龙马小弟出现了。"
+        }
+      },
+      {
+        "json": {
+          "scene": "小白马(一只幼年小白马，戴着黄色尿布，表情嚣张)偷偷溜到猫爸安全绳的固定点，用牙齿咬住了绳子；大特写，小白马的牙齿和绳子纤维清晰可见；3d写实风格，色彩聚焦，光影紧张，构图紧凑，细节锐利",
+          "action": "【时长】2秒。【景别】大特写。【运镜】固定镜头。【主体动作】小白马用力咬合，绳子纤维开始断裂。【其他动态】无。",
+          "speak": "小白龙马调皮地咬断了猫爸的绳子。"
+        }
+      },
+      {
+        "json": {
+          "scene": "猫爸(一只肌肉发达的猫爸爸，小猫的爸爸，穿着黄色T恤和黑色运动裤)惊恐地睁大眼睛，身体失去平衡，从高空急速坠落；慢动作，背景模糊；3d写实风格，色彩瞬间变冷，光影混乱，动态模糊，渲染冲击感强",
+          "action": "【时长】3秒。【景别】中景。【运镜】快速下拉，模拟坠落视角。【主体动作】猫爸四肢在空中无助地挥舞，表情惊恐。【其他动态】安全绳的断头在空中飘荡。",
+          "speak": "猫爸从高空坠落，重重地摔在地上。"
+        }
+      },
+      {
+        "json": {
+          "scene": "猫爸(一只肌肉发达的猫爸爸，小猫的爸爸，穿着黄色T恤和黑色运动裤)痛苦地躺在地上，一条腿明显受伤变形，他挣扎着试图坐起；猫宝(一只粉色小猫，戴着红色尿布，有着大大的蓝色眼睛)冲过来，大眼睛里瞬间蓄满泪水；3d写实风格，色彩灰暗，光影低沉，构图倾斜以表现不安，渲染细腻",
+          "action": "【时长】4秒。【景别】中近景。【运镜】从猫爸的伤腿缓慢上摇到他的脸，再摇到旁边猫宝的脸。【主体动作】猫爸痛苦呻吟，猫宝用爪子轻轻碰触爸爸的伤腿，眼泪大颗滚落。【其他动态】远处，白马和小白马得意地离开的背影。",
+          "speak": "他的腿受了伤，只能依靠拐杖走路。小猫宝看到爸爸受伤，眼中充满了泪水。"
+        }
+      },
+      {
+        "json": {
+          "scene": "猫宝(一只粉色小猫，戴着红色尿布，有着大大的蓝色眼睛)坚强地擦掉眼泪，举起一块写着“喜欢点个关注”的纸板牌子，眼神充满恳求地看向镜头；特写，聚焦猫宝的脸和牌子；3d写实风格，色彩恢复温暖，柔光，构图居中，渲染感人",
+          "action": "【时长】4秒。【景别】特写。【运镜】缓慢推近。【主体动作】猫宝双手高举牌子，微微颤抖，蓝色的大眼睛一眨不眨，充满希望。【其他动态】背景虚化，隐约可见躺在床上的猫爸。",
+          "speak": "他举起一块写着“喜欢点个关注”的牌子，希望能得到帮助。"
+        }
+      },
+      {
+        "json": {
+          "scene": "无数点赞、爱心和加油的弹幕特效如洪流般从屏幕四周涌入，汇聚在猫宝周围，形成温暖的光环；猫宝(一只粉色小猫，戴着红色尿布，有着大大的蓝色眼睛)的表情从恳求变为坚定；3d写实风格结合2D特效，色彩绚丽，光影充满能量，动态构图，渲染富有活力",
+          "action": "【时长】3秒。【景别】中景。【运镜】镜头微微旋转，环绕猫宝。【主体动作】猫宝看着环绕的虚拟支持，深吸一口气，眼神变得锐利，放下牌子。【其他动态】弹幕特效持续流动。",
+          "speak": "得到网友们的支持后，小猫宝的眼神变得无比坚定。"
+        }
+      },
+      {
+        "json": {
+          "scene": "猫宝(一只粉色小猫，戴着红色尿布，有着大大的蓝色眼睛)拖着一把几乎和他一样高的大锤子，迈着坚定的步伐，走向一辆停在街边的粉色豪华跑车；低角度拍摄，突出猫宝的决心和锤子的重量；3d写实风格，色彩饱和，光影硬朗，构图有力，渲染细腻",
+          "action": "【时长】4秒。【景别】全景。【运镜】跟拍，从猫宝侧面低角度跟随。【主体动作】猫宝费力但坚决地拖着大锤子前进，尿布随着步伐晃动。【其他动态】无。",
+          "speak": "小猫宝拿起一把大锤子，径直走向一辆粉色的跑车，那是白龙马大哥的。"
+        }
+      },
+      {
+        "json": {
+          "scene": "猫宝(一只粉色小猫，戴着红色尿布，有着大大的蓝色眼睛)抡起大锤，狠狠地砸向粉色跑车的引擎盖、车窗和车灯；每一次敲击都火花四溅，车辆迅速变形、冒烟；快速剪辑，充满力量感；3d写实风格，色彩对比强烈（粉色车与金属火花），光影闪烁，构图动态，渲染破坏的真实感",
+          "action": "【时长】5秒。【景别】中景与特写交替。【运镜】多角度快速切换，包含推近和摇动。【主体动作】猫宝用尽全力挥锤，表情专注而愤怒，车辆部件四处飞溅。【其他动态】车辆警报响起又很快哑火，黑烟冒出。",
+          "speak": "小猫宝对着跑车一顿猛砸，直到车辆冒烟。"
+        }
+      },
+      {
+        "json": {
+          "scene": "白马(一只成年的白马，穿着黑色T恤，戴着黑色墨镜和金色大项链)看到冒烟的废车，暴怒地摘掉墨镜摔碎，抽出一把长刀，嚎叫着冲向猫宝；小白马(一只幼年小白马，戴着黄色尿布，表情嚣张)跟在后面助威；3d写实风格，色彩充满怒火（红色调），光影凌厉，构图具有压迫感，渲染紧张",
+          "action": "【时长】3秒。【景别】全景。【运镜】从报废车辆快速拉出，展现冲来的白马。【主体动作】白马面目狰狞地冲刺，刀尖寒光闪闪。小白马挥舞着小拳头叫嚣。【其他动态】猫宝背对镜头，显得很弱小。",
+          "speak": "白龙马大哥看到自己的豪车被毁，气急败坏地拿着刀冲向小猫宝。"
+        }
+      },
+      {
+        "json": {
+          "scene": "就在白马即将冲到面前时，猫宝(一只粉色小猫，戴着红色尿布，有着大大的蓝色眼睛)冷静地转过身，脚下是一堆复杂缠绕的电线，他灵巧地将电线两端接在一起；特写猫宝的爪子和电线接口，火花迸现；3d写实风格，色彩聚焦于细节，光影闪烁，构图巧妙，渲染悬念",
+          "action": "【时长】3秒。【景别】特写转中景。【运镜】从电线接口的特写快速拉出，展现全景。【主体动作】猫宝完成连接，抬头看向冲来的白马，嘴角露出一丝微笑。电线发出“滋滋”声。【其他动态】白马急刹车，脸上露出疑惑和惊恐。",
+          "speak": "但小猫宝早有准备，他拿出一堆电线，似乎是要修理什么东西。"
+        }
+      },
+      {
+        "json": {
+          "scene": "白马(一只成年的白马，穿着黑色T恤，戴着黑色墨镜和金色大项链)和小白马(一只幼年小白马，戴着黄色尿布，表情嚣张)被一股强大的电流击中，全身毛发炸起，剧烈颤抖，墨镜和项链飞脱，最后变成两具冒着青烟、浑身焦黑的搞笑造型躺在地上；猫宝(一只粉色小猫，戴着红色尿布，有着大大的蓝色眼睛)淡定地拍了拍爪子；3d写实风格，色彩夸张（电光蓝与焦黑色），光影戏剧化，构图幽默，渲染卡通化效果",
+          "action": "【时长】4秒。【景别】中景。【运镜】固定镜头，轻微晃动模拟电击效果。【主体动作】白马和小白马在电击中疯狂摇摆、翻白眼，最后“砰”地倒地，变成搞笑的黑炭造型。猫宝在一旁满意地看着。【其他动态】几缕青烟从白马和小白马头上飘起。",
+          "speak": "最终，小猫宝成功地让白龙马大哥和他的小弟得到了应有的教训。"
+        }
+      },
+      {
+        "json": {
+          "scene": "猫爸(一只肌肉发达的猫爸爸，小猫的爸爸，穿着黄色T恤和黑色运动裤)拄着拐杖，和猫宝(一只粉色小猫，戴着红色尿布，有着大大的蓝色眼睛)并肩站在夕阳下，猫爸用爪子欣慰地揉了揉猫宝的头，猫宝幸福地眯起眼睛；远景，温馨的剪影；3d写实风格，暖金色调，柔和的逆光，构图平衡而温暖，渲染感人",
+          "action": "【时长】5秒。【景别】远景。【运镜】缓慢拉远，形成壮丽的剪影。【主体动作】父子俩依偎在一起，猫爸低头，猫宝抬头，亲密互动。【其他动态】夕阳缓缓下沉，云彩被染成金色。",
+          "speak": "夕阳下，猫爸爸和猫宝紧紧地依偎在一起，一切终于恢复了平静与温暖。"
+        }
+      }
+    ],
+    "Merge2": [
+      {
+        "json": {
+          "obj": [
+            "猫爸爸正在小心翼翼的擦拭着摩天大楼的窗户，小猫在地面欢快的玩耍。",
+            "突然，白龙马大哥带着他的小弟白龙马小弟出现了。",
+            "小白龙马调皮地咬断了猫爸的绳子。",
+            "猫爸从高空坠落，重重地摔在地上。",
+            "他的腿受了伤，只能依靠拐杖走路。小猫宝看到爸爸受伤，眼中充满了泪水。",
+            "他举起一块写着“喜欢点个关注”的牌子，希望能得到帮助。",
+            "得到网友们的支持后，小猫宝的眼神变得无比坚定。",
+            "小猫宝拿起一把大锤子，径直走向一辆粉色的跑车，那是白龙马大哥的。",
+            "小猫宝对着跑车一顿猛砸，直到车辆冒烟。",
+            "白龙马大哥看到自己的豪车被毁，气急败坏地拿着刀冲向小猫宝。",
+            "但小猫宝早有准备，他拿出一堆电线，似乎是要修理什么东西。",
+            "最终，小猫宝成功地让白龙马大哥和他的小弟得到了应有的教训。",
+            "夕阳下，猫爸爸和猫宝紧紧地依偎在一起，一切终于恢复了平静与温暖。"
+          ],
+          "data": [
+            {
+              "provider": "local",
+              "url": "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/1.mp4",
+              "duration": 0
+            },
+            {
+              "provider": "local",
+              "url": "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/2.mp4",
+              "duration": 0
+            },
+            {
+              "provider": "local",
+              "url": "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/3.mp4",
+              "duration": 0
+            },
+            {
+              "provider": "local",
+              "url": "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/4.mp4",
+              "duration": 0
+            },
+            {
+              "provider": "local",
+              "url": "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/5.mp4",
+              "duration": 0
+            },
+            {
+              "provider": "local",
+              "url": "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/6.mp4",
+              "duration": 0
+            },
+            {
+              "provider": "local",
+              "url": "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/7.mp4",
+              "duration": 0
+            },
+            {
+              "provider": "local",
+              "url": "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/8.mp4",
+              "duration": 0
+            },
+            {
+              "provider": "local",
+              "url": "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/9.mp4",
+              "duration": 0
+            },
+            {
+              "provider": "local",
+              "url": "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/10.mp4",
+              "duration": 0
+            },
+            {
+              "provider": "local",
+              "url": "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/11.mp4",
+              "duration": 0
+            },
+            {
+              "provider": "local",
+              "url": "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/12.mp4",
+              "duration": 0
+            },
+            {
+              "provider": "local",
+              "url": "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/13.mp4",
+              "duration": 0
+            }
+          ]
+        },
+        "binary": {},
+        "pairedItem": [
+          {
+            "item": 0
+          },
+          {
+            "item": 0,
+            "input": 1
+          },
+          {
+            "item": 0,
+            "input": 1
+          }
+        ]
+      }
+    ],
+    "口播文案": [
+      {
+        "json": {
+          "obj": "猫爸爸正在小心翼翼的擦拭着摩天大楼的窗户，小猫在地面欢快的玩耍。"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "obj": "突然，白龙马大哥带着他的小弟白龙马小弟出现了。"
+        },
+        "pairedItem": {
+          "item": 1
+        }
+      },
+      {
+        "json": {
+          "obj": "小白龙马调皮地咬断了猫爸的绳子。"
+        },
+        "pairedItem": {
+          "item": 2
+        }
+      },
+      {
+        "json": {
+          "obj": "猫爸从高空坠落，重重地摔在地上。"
+        },
+        "pairedItem": {
+          "item": 3
+        }
+      },
+      {
+        "json": {
+          "obj": "他的腿受了伤，只能依靠拐杖走路。小猫宝看到爸爸受伤，眼中充满了泪水。"
+        },
+        "pairedItem": {
+          "item": 4
+        }
+      },
+      {
+        "json": {
+          "obj": "他举起一块写着“喜欢点个关注”的牌子，希望能得到帮助。"
+        },
+        "pairedItem": {
+          "item": 5
+        }
+      },
+      {
+        "json": {
+          "obj": "得到网友们的支持后，小猫宝的眼神变得无比坚定。"
+        },
+        "pairedItem": {
+          "item": 6
+        }
+      },
+      {
+        "json": {
+          "obj": "小猫宝拿起一把大锤子，径直走向一辆粉色的跑车，那是白龙马大哥的。"
+        },
+        "pairedItem": {
+          "item": 7
+        }
+      },
+      {
+        "json": {
+          "obj": "小猫宝对着跑车一顿猛砸，直到车辆冒烟。"
+        },
+        "pairedItem": {
+          "item": 8
+        }
+      },
+      {
+        "json": {
+          "obj": "白龙马大哥看到自己的豪车被毁，气急败坏地拿着刀冲向小猫宝。"
+        },
+        "pairedItem": {
+          "item": 9
+        }
+      },
+      {
+        "json": {
+          "obj": "但小猫宝早有准备，他拿出一堆电线，似乎是要修理什么东西。"
+        },
+        "pairedItem": {
+          "item": 10
+        }
+      },
+      {
+        "json": {
+          "obj": "最终，小猫宝成功地让白龙马大哥和他的小弟得到了应有的教训。"
+        },
+        "pairedItem": {
+          "item": 11
+        }
+      },
+      {
+        "json": {
+          "obj": "夕阳下，猫爸爸和猫宝紧紧地依偎在一起，一切终于恢复了平静与温暖。"
+        },
+        "pairedItem": {
+          "item": 12
+        }
+      }
+    ],
+    "Aggregate": [
+      {
+        "json": {
+          "obj": [
+            "猫爸爸正在小心翼翼的擦拭着摩天大楼的窗户，小猫在地面欢快的玩耍。",
+            "突然，白龙马大哥带着他的小弟白龙马小弟出现了。",
+            "小白龙马调皮地咬断了猫爸的绳子。",
+            "猫爸从高空坠落，重重地摔在地上。",
+            "他的腿受了伤，只能依靠拐杖走路。小猫宝看到爸爸受伤，眼中充满了泪水。",
+            "他举起一块写着“喜欢点个关注”的牌子，希望能得到帮助。",
+            "得到网友们的支持后，小猫宝的眼神变得无比坚定。",
+            "小猫宝拿起一把大锤子，径直走向一辆粉色的跑车，那是白龙马大哥的。",
+            "小猫宝对着跑车一顿猛砸，直到车辆冒烟。",
+            "白龙马大哥看到自己的豪车被毁，气急败坏地拿着刀冲向小猫宝。",
+            "但小猫宝早有准备，他拿出一堆电线，似乎是要修理什么东西。",
+            "最终，小猫宝成功地让白龙马大哥和他的小弟得到了应有的教训。",
+            "夕阳下，猫爸爸和猫宝紧紧地依偎在一起，一切终于恢复了平静与温暖。"
+          ]
+        },
+        "pairedItem": [
+          {
+            "item": 0
+          },
+          {
+            "item": 1
+          },
+          {
+            "item": 2
+          },
+          {
+            "item": 3
+          },
+          {
+            "item": 4
+          },
+          {
+            "item": 5
+          },
+          {
+            "item": 6
+          },
+          {
+            "item": 7
+          },
+          {
+            "item": 8
+          },
+          {
+            "item": 9
+          },
+          {
+            "item": 10
+          },
+          {
+            "item": 11
+          },
+          {
+            "item": 12
+          }
+        ]
+      }
+    ],
+    "生成视频子工作流": [
+      {
+        "json": {
+          "videoURL": "https://ark-content-generation-cn-beijing.tos-cn-beijing.volces.com/doubao-seedance-1-0-lite-i2v/02176960977591500000000000000000000ffffac180204dcc99c.mp4?X-Tos-Algorithm=TOS4-HMAC-SHA256&X-Tos-Credential=AKLTYWJkZTExNjA1ZDUyNDc3YzhjNTM5OGIyNjBhNDcyOTQ%2F20260128%2Fcn-beijing%2Ftos%2Frequest&X-Tos-Date=20260128T141633Z&X-Tos-Expires=86400&X-Tos-Signature=03693f5191e9554f3d41b9f76b61a53703665477844adface003191da344d319&X-Tos-SignedHeaders=host"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "下载视频": [
+      {
+        "json": {
+          "videoURL": "https://ark-content-generation-cn-beijing.tos-cn-beijing.volces.com/doubao-seedance-1-0-lite-i2v/02176960977591500000000000000000000ffffac180204dcc99c.mp4?X-Tos-Algorithm=TOS4-HMAC-SHA256&X-Tos-Credential=AKLTYWJkZTExNjA1ZDUyNDc3YzhjNTM5OGIyNjBhNDcyOTQ%2F20260128%2Fcn-beijing%2Ftos%2Frequest&X-Tos-Date=20260128T141633Z&X-Tos-Expires=86400&X-Tos-Signature=03693f5191e9554f3d41b9f76b61a53703665477844adface003191da344d319&X-Tos-SignedHeaders=host"
+        },
+        "binary": {
+          "data": {
+            "mimeType": "video/mp4",
+            "fileType": "video",
+            "fileExtension": "mp4",
+            "data": "filesystem-v2",
+            "directory": "https://ark-content-generation-cn-beijing.tos-cn-beijing.volces.com/doubao-seedance-1-0-lite-i2v/02176960977591500000000000000000000ffffac180204dcc99c.mp4?X-Tos-Algorithm=TOS4-HMAC-SHA256&X-Tos-Credential=AKLTYWJkZTExNjA1ZDUyNDc3YzhjNTM5OGIyNjBhNDcyOTQ%2F20260128%2Fcn-beijing%2Ftos%2Frequest&X-Tos-Date=20260128T141633Z&X-Tos-Expires=86400&X-Tos-Signature=03693f5191e9554f3d41b9f76b61a53703665477844adface003191da344d319&X-Tos-SignedHeaders=host",
+            "fileName": "02176960977591500000000000000000000ffffac180204dcc99c.mp4",
+            "id": "filesystem-v2:workflows/6B0Frdn9wOpdSSBM/executions/1338/binary_data/3ea99f49-e732-4d9c-a531-b13e8aefbbf5",
+            "fileSize": "2.58 MB"
+          }
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "保存到磁盘1": [
+      {
+        "json": {
+          "videoURL": "https://ark-content-generation-cn-beijing.tos-cn-beijing.volces.com/doubao-seedance-1-0-lite-i2v/02176960977591500000000000000000000ffffac180204dcc99c.mp4?X-Tos-Algorithm=TOS4-HMAC-SHA256&X-Tos-Credential=AKLTYWJkZTExNjA1ZDUyNDc3YzhjNTM5OGIyNjBhNDcyOTQ%2F20260128%2Fcn-beijing%2Ftos%2Frequest&X-Tos-Date=20260128T141633Z&X-Tos-Expires=86400&X-Tos-Signature=03693f5191e9554f3d41b9f76b61a53703665477844adface003191da344d319&X-Tos-SignedHeaders=host",
+          "fileName": "/home/node/.n8n-files/Videos/n8n生成/小猫和小狗大战300回合/1.mp4"
+        },
+        "binary": {
+          "data": {
+            "mimeType": "video/mp4",
+            "fileType": "video",
+            "fileExtension": "mp4",
+            "data": "filesystem-v2",
+            "directory": "https://ark-content-generation-cn-beijing.tos-cn-beijing.volces.com/doubao-seedance-1-0-lite-i2v/02176960977591500000000000000000000ffffac180204dcc99c.mp4?X-Tos-Algorithm=TOS4-HMAC-SHA256&X-Tos-Credential=AKLTYWJkZTExNjA1ZDUyNDc3YzhjNTM5OGIyNjBhNDcyOTQ%2F20260128%2Fcn-beijing%2Ftos%2Frequest&X-Tos-Date=20260128T141633Z&X-Tos-Expires=86400&X-Tos-Signature=03693f5191e9554f3d41b9f76b61a53703665477844adface003191da344d319&X-Tos-SignedHeaders=host",
+            "fileName": "02176960977591500000000000000000000ffffac180204dcc99c.mp4",
+            "id": "filesystem-v2:workflows/6B0Frdn9wOpdSSBM/executions/1338/binary_data/3ea99f49-e732-4d9c-a531-b13e8aefbbf5",
+            "fileSize": "2.58 MB"
+          }
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "Wait1": [
+      {
+        "json": {
+          "status": 200,
+          "message": "success",
+          "data": {
+            "task_id": "8f4e3e82-3965-4ef5-9ad4-a3c4534a2321"
+          }
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "查询视频状态1": [
+      {
+        "json": {
+          "status": 200,
+          "message": "success",
+          "data": {
+            "task_id": "8f4e3e82-3965-4ef5-9ad4-a3c4534a2321",
+            "state": 4,
+            "progress": 50
+          }
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "下载视频1": [
+      {
+        "json": {
+          "status": 200,
+          "message": "success",
+          "data": {
+            "task_id": "8f4e3e82-3965-4ef5-9ad4-a3c4534a2321",
+            "state": 1,
+            "progress": 100,
+            "videos": [
+              "http://host.docker.internal:8080/tasks/8f4e3e82-3965-4ef5-9ad4-a3c4534a2321/final-1.mp4"
+            ],
+            "combined_videos": [
+              "http://host.docker.internal:8080/tasks/8f4e3e82-3965-4ef5-9ad4-a3c4534a2321/combined-1.mp4"
+            ],
+            "script": "猫爸爸正在小心翼翼的擦拭着摩天大楼的窗户，小猫在地面欢快的玩耍。,突然，白龙马大哥带着他的小弟白龙马小弟出现了。,小白龙马调皮地咬断了猫爸的绳子。,猫爸从高空坠落，重重地摔在地上。,他的腿受了伤，只能依靠拐杖走路。小猫宝看到爸爸受伤，眼中充满了泪水。,他举起一块写着“喜欢点个关注”的牌子，希望能得到帮助。,得到网友们的支持后，小猫宝的眼神变得无比坚定。,小猫宝拿起一把大锤子，径直走向一辆粉色的跑车，那是白龙马大哥的。,小猫宝对着跑车一顿猛砸，直到车辆冒烟。,白龙马大哥看到自己的豪车被毁，气急败坏地拿着刀冲向小猫宝。,但小猫宝早有准备，他拿出一堆电线，似乎是要修理什么东西。,最终，小猫宝成功地让白龙马大哥和他的小弟得到了应有的教训。,夕阳下，猫爸爸和猫宝紧紧地依偎在一起，一切终于恢复了平静与温暖。",
+            "terms": "",
+            "audio_file": "/MoneyPrinterTurbo/storage/tasks/8f4e3e82-3965-4ef5-9ad4-a3c4534a2321/audio.mp3",
+            "audio_duration": 66,
+            "subtitle_path": "/MoneyPrinterTurbo/storage/tasks/8f4e3e82-3965-4ef5-9ad4-a3c4534a2321/subtitle.srt",
+            "materials": [
+              "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/1.mp4",
+              "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/2.mp4",
+              "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/3.mp4",
+              "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/4.mp4",
+              "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/5.mp4",
+              "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/6.mp4",
+              "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/7.mp4",
+              "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/8.mp4",
+              "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/9.mp4",
+              "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/10.mp4",
+              "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/11.mp4",
+              "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/12.mp4",
+              "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/13.mp4"
+            ]
+          }
+        },
+        "binary": {
+          "data": {
+            "mimeType": "video/mp4",
+            "fileType": "video",
+            "fileExtension": "mp4",
+            "data": "filesystem-v2",
+            "directory": "http://host.docker.internal:8080/tasks/8f4e3e82-3965-4ef5-9ad4-a3c4534a2321/final-1.mp4",
+            "fileName": "final-1.mp4",
+            "id": "filesystem-v2:workflows/6B0Frdn9wOpdSSBM/executions/1338/binary_data/4120dae3-db3f-4bd3-820e-bc3f5aa38b2b",
+            "fileSize": "17.6 MB"
+          }
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "保存到磁盘3": [
+      {
+        "json": {
+          "status": 200,
+          "message": "success",
+          "data": {
+            "task_id": "8f4e3e82-3965-4ef5-9ad4-a3c4534a2321",
+            "state": 1,
+            "progress": 100,
+            "videos": [
+              "http://host.docker.internal:8080/tasks/8f4e3e82-3965-4ef5-9ad4-a3c4534a2321/final-1.mp4"
+            ],
+            "combined_videos": [
+              "http://host.docker.internal:8080/tasks/8f4e3e82-3965-4ef5-9ad4-a3c4534a2321/combined-1.mp4"
+            ],
+            "script": "猫爸爸正在小心翼翼的擦拭着摩天大楼的窗户，小猫在地面欢快的玩耍。,突然，白龙马大哥带着他的小弟白龙马小弟出现了。,小白龙马调皮地咬断了猫爸的绳子。,猫爸从高空坠落，重重地摔在地上。,他的腿受了伤，只能依靠拐杖走路。小猫宝看到爸爸受伤，眼中充满了泪水。,他举起一块写着“喜欢点个关注”的牌子，希望能得到帮助。,得到网友们的支持后，小猫宝的眼神变得无比坚定。,小猫宝拿起一把大锤子，径直走向一辆粉色的跑车，那是白龙马大哥的。,小猫宝对着跑车一顿猛砸，直到车辆冒烟。,白龙马大哥看到自己的豪车被毁，气急败坏地拿着刀冲向小猫宝。,但小猫宝早有准备，他拿出一堆电线，似乎是要修理什么东西。,最终，小猫宝成功地让白龙马大哥和他的小弟得到了应有的教训。,夕阳下，猫爸爸和猫宝紧紧地依偎在一起，一切终于恢复了平静与温暖。",
+            "terms": "",
+            "audio_file": "/MoneyPrinterTurbo/storage/tasks/8f4e3e82-3965-4ef5-9ad4-a3c4534a2321/audio.mp3",
+            "audio_duration": 66,
+            "subtitle_path": "/MoneyPrinterTurbo/storage/tasks/8f4e3e82-3965-4ef5-9ad4-a3c4534a2321/subtitle.srt",
+            "materials": [
+              "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/1.mp4",
+              "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/2.mp4",
+              "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/3.mp4",
+              "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/4.mp4",
+              "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/5.mp4",
+              "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/6.mp4",
+              "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/7.mp4",
+              "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/8.mp4",
+              "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/9.mp4",
+              "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/10.mp4",
+              "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/11.mp4",
+              "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/12.mp4",
+              "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/13.mp4"
+            ]
+          },
+          "fileName": "/home/node/.n8n-files/Videos/n8n生成/小猫和小狗大战300回合/小猫和小狗大战300回合.mp4"
+        },
+        "binary": {
+          "data": {
+            "mimeType": "video/mp4",
+            "fileType": "video",
+            "fileExtension": "mp4",
+            "data": "filesystem-v2",
+            "directory": "http://host.docker.internal:8080/tasks/8f4e3e82-3965-4ef5-9ad4-a3c4534a2321/final-1.mp4",
+            "fileName": "final-1.mp4",
+            "id": "filesystem-v2:workflows/6B0Frdn9wOpdSSBM/executions/1338/binary_data/4120dae3-db3f-4bd3-820e-bc3f5aa38b2b",
+            "fileSize": "17.6 MB"
+          }
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "本地素材整理1": [
+      {
+        "json": {
+          "provider": "local",
+          "url": "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/1.mp4",
+          "duration": 0
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "provider": "local",
+          "url": "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/2.mp4",
+          "duration": 0
+        },
+        "pairedItem": {
+          "item": 1
+        }
+      },
+      {
+        "json": {
+          "provider": "local",
+          "url": "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/3.mp4",
+          "duration": 0
+        },
+        "pairedItem": {
+          "item": 2
+        }
+      },
+      {
+        "json": {
+          "provider": "local",
+          "url": "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/4.mp4",
+          "duration": 0
+        },
+        "pairedItem": {
+          "item": 3
+        }
+      },
+      {
+        "json": {
+          "provider": "local",
+          "url": "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/5.mp4",
+          "duration": 0
+        },
+        "pairedItem": {
+          "item": 4
+        }
+      },
+      {
+        "json": {
+          "provider": "local",
+          "url": "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/6.mp4",
+          "duration": 0
+        },
+        "pairedItem": {
+          "item": 5
+        }
+      },
+      {
+        "json": {
+          "provider": "local",
+          "url": "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/7.mp4",
+          "duration": 0
+        },
+        "pairedItem": {
+          "item": 6
+        }
+      },
+      {
+        "json": {
+          "provider": "local",
+          "url": "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/8.mp4",
+          "duration": 0
+        },
+        "pairedItem": {
+          "item": 7
+        }
+      },
+      {
+        "json": {
+          "provider": "local",
+          "url": "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/9.mp4",
+          "duration": 0
+        },
+        "pairedItem": {
+          "item": 8
+        }
+      },
+      {
+        "json": {
+          "provider": "local",
+          "url": "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/10.mp4",
+          "duration": 0
+        },
+        "pairedItem": {
+          "item": 9
+        }
+      },
+      {
+        "json": {
+          "provider": "local",
+          "url": "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/11.mp4",
+          "duration": 0
+        },
+        "pairedItem": {
+          "item": 10
+        }
+      },
+      {
+        "json": {
+          "provider": "local",
+          "url": "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/12.mp4",
+          "duration": 0
+        },
+        "pairedItem": {
+          "item": 11
+        }
+      },
+      {
+        "json": {
+          "provider": "local",
+          "url": "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/13.mp4",
+          "duration": 0
+        },
+        "pairedItem": {
+          "item": 12
+        }
+      }
+    ],
+    "Aggregate1": [
+      {
+        "json": {
+          "data": [
+            {
+              "provider": "local",
+              "url": "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/1.mp4",
+              "duration": 0
+            },
+            {
+              "provider": "local",
+              "url": "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/2.mp4",
+              "duration": 0
+            },
+            {
+              "provider": "local",
+              "url": "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/3.mp4",
+              "duration": 0
+            },
+            {
+              "provider": "local",
+              "url": "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/4.mp4",
+              "duration": 0
+            },
+            {
+              "provider": "local",
+              "url": "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/5.mp4",
+              "duration": 0
+            },
+            {
+              "provider": "local",
+              "url": "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/6.mp4",
+              "duration": 0
+            },
+            {
+              "provider": "local",
+              "url": "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/7.mp4",
+              "duration": 0
+            },
+            {
+              "provider": "local",
+              "url": "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/8.mp4",
+              "duration": 0
+            },
+            {
+              "provider": "local",
+              "url": "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/9.mp4",
+              "duration": 0
+            },
+            {
+              "provider": "local",
+              "url": "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/10.mp4",
+              "duration": 0
+            },
+            {
+              "provider": "local",
+              "url": "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/11.mp4",
+              "duration": 0
+            },
+            {
+              "provider": "local",
+              "url": "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/12.mp4",
+              "duration": 0
+            },
+            {
+              "provider": "local",
+              "url": "/MoneyPrinterTurbo/storage/local_videos/n8n生成/小猫和小狗大战300回合/13.mp4",
+              "duration": 0
+            }
+          ]
+        },
+        "pairedItem": [
+          {
+            "item": 0
+          },
+          {
+            "item": 1
+          },
+          {
+            "item": 2
+          },
+          {
+            "item": 3
+          },
+          {
+            "item": 4
+          },
+          {
+            "item": 5
+          },
+          {
+            "item": 6
+          },
+          {
+            "item": 7
+          },
+          {
+            "item": 8
+          },
+          {
+            "item": 9
+          },
+          {
+            "item": 10
+          },
+          {
+            "item": 11
+          },
+          {
+            "item": 12
+          }
+        ]
+      }
+    ],
+    "本地视频合并": [
+      {
+        "json": {
+          "status": 200,
+          "message": "success",
+          "data": {
+            "task_id": "8f4e3e82-3965-4ef5-9ad4-a3c4534a2321"
+          }
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "解析地址": [
+      {
+        "json": {
+          "app_token": "FNDvbbRKja0GsGsGbjwcAmOfn1f",
+          "table_id": "tblas6liroBPsRdS",
+          "view_id": "vew15USgZ3"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "更新状态": [
+      {
+        "json": {
+          "code": 0,
+          "data": {
+            "record": {
+              "fields": {
+                "状态": "待发布",
+                "视频下载地址": "http://host.docker.internal:8080/tasks/04129d89-1814-4a3f-884e-adaf1e36e766/final-1.mp4"
+              },
+              "id": "recuTQYplwipGG",
+              "record_id": "recuTQYplwipGG"
+            }
+          },
+          "msg": "success"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "本地素材整理1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "生成视频子工作流",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge2": {
+      "main": [
+        [
+          {
+            "node": "本地视频合并",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "口播文案": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "格式化": {
+      "main": [
+        [
+          {
+            "node": "拆分剪辑",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "分镜剪辑（中文）2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "拆分剪辑": {
+      "main": [
+        [
+          {
+            "node": "口播文案",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "分镜剪辑（中文）2": {
+      "main": [
+        [
+          {
+            "node": "格式化",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "分镜剪辑（中文）2",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "生成视频子工作流": {
+      "main": [
+        [
+          {
+            "node": "下载视频",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "创建主题文件夹": {
+      "main": [
+        [
+          {
+            "node": "分镜剪辑（中文）2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "下载视频": {
+      "main": [
+        [
+          {
+            "node": "保存到磁盘1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "保存到磁盘1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "查询视频状态1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "查询视频状态1": {
+      "main": [
+        [
+          {
+            "node": "Switch1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "下载视频1": {
+      "main": [
+        [
+          {
+            "node": "保存到磁盘3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch1": {
+      "main": [
+        [
+          {
+            "node": "下载视频1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "本地素材整理1": {
+      "main": [
+        [
+          {
+            "node": "Aggregate1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate1": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "创建主题文件夹",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "本地视频合并": {
+      "main": [
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "保存到磁盘3": {
+      "main": [
+        [
+          {
+            "node": "解析地址",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "解析地址": {
+      "main": [
+        [
+          {
+            "node": "更新状态",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "87d05a60-a4ea-4e5a-8414-c90455097309",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4ec3133c8d628113a824c66a73c5bdda7b94b0762c5189e937dc7ec53c5a43ee"
+  },
+  "id": "6B0Frdn9wOpdSSBM",
+  "tags": []
+}

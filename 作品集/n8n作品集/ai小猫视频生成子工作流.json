@@ -1,0 +1,1007 @@
+{
+  "name": "实战11-视频生成子工作流",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "scene",
+              "type": "any"
+            },
+            {
+              "name": "action",
+              "type": "any"
+            },
+            {
+              "name": "model"
+            }
+          ]
+        }
+      },
+      "id": "5ecd8152-702e-4eae-82c3-6776c2847bfb",
+      "typeVersion": 1.1,
+      "name": "Start",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "position": [
+        -2192,
+        -256
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "57f3eba8-23ff-48b2-8300-3d8a65f16469",
+                    "leftValue": "={{ $json.status }}",
+                    "rightValue": "=succeeded",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.status }}",
+                    "rightValue": "running",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "0b627902-c8c7-4841-b1a6-dc7a88909bc7"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "ac037a44-e48e-4e5a-b4f2-ae101228e769",
+                    "leftValue": "={{ $json.status }}",
+                    "rightValue": "=queued",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "59138973-5a9c-4d86-bc55-5bef8e581020",
+                    "leftValue": "={{ $json.error.code }}",
+                    "rightValue": "OutputVideoSensitiveContentDetected",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "ea625afa-6ac5-47c9-b62e-3ad312d698bc",
+                    "leftValue": "={{ $json.error.code }}",
+                    "rightValue": "failed",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -288,
+        -736
+      ],
+      "id": "de9c02b6-f6ab-462f-8b9f-852789336a5b",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "amount": 3
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        416,
+        -608
+      ],
+      "id": "daef6309-90bc-48e5-9ce6-d044bd7864d6",
+      "name": "Wait",
+      "webhookId": "3f723a1c-34df-4f09-8519-eef1a76f081a"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://ark.cn-beijing.volces.com/api/v3/contents/generations/tasks",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer "
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"model\": \"doubao-seedance-1-0-pro-250528\",\n    \"content\": [\n        {\n            \"type\": \"text\",\n            \"text\": \"{{$json.output.toJsonString().replaceAll(\"\\\"\",\"\") }} --resolution 480p  --duration 5 --camerafixed false --watermark false --ratio 1:1\"\n        },\n        {\n            \"type\": \"image_url\",\n            \"image_url\": {\n                \"url\": \"{{ $('火山豆包生图')?.item?.json?.data?.[0]?.url || $('HTTP Request1')?.item?.json?.data?.[0]?.url }}\"\n            }\n        }\n    ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -336,
+        -288
+      ],
+      "id": "67cb71dd-8657-462a-a34c-bedfa1dd6eee",
+      "name": "生成视频豆包1.0 pro2"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "46f17b28-4843-42c2-a2a7-d58a5922e567",
+              "leftValue": "={{ $('处理大模型改写后的分镜脚本').isExecuted }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        48,
+        -560
+      ],
+      "id": "f5a7780a-6af0-4f29-8715-1c383ff03483",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1678dd04-4c40-4f7b-9a57-a1a48a9f1011",
+              "name": "data",
+              "value": "={{ $json.data[0].url }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1392,
+        -272
+      ],
+      "id": "576d3dc6-b856-4821-88a3-78a06f5ef367",
+      "name": "format"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3b5b3234-f108-4b39-b491-52e8d0e41741",
+              "name": "videoURL",
+              "value": "={{ $json.content.video_url }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        416,
+        -736
+      ],
+      "id": "64d2843d-dc5a-4512-a9c9-bf67df390084",
+      "name": "最终结果"
+    },
+    {
+      "parameters": {
+        "content": "## 图片和视频生成部分 \n**Double click** to edit me. [Guide](https://docs.n8n.io/workflows/sticky-notes/)",
+        "height": 1376,
+        "width": 3376
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -2304,
+        -752
+      ],
+      "typeVersion": 1,
+      "id": "e910009b-fe12-4854-bbdb-0e9e64b34574",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        352,
+        112
+      ],
+      "id": "3f31e7de-7c7d-41a1-9ef2-8d512de38433",
+      "name": "DeepSeek Chat Model",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "w2l1BwFih5cyUWGb",
+          "name": "DeepSeek account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('处理大模型改写后的分镜脚本').item.json.output }}\n\n",
+        "options": {
+          "systemMessage": "改写输入的提示词，保留原本的含义，将一些违禁词修改掉，传入的一定有违禁词，尽可能保留原来的含义和内容，直接输出改写的结果，禁止输出描述说明\n\n## 限制\n1.将血腥的场景优化，改成受伤\n2.严禁出现违禁词：血、血液、丧尸、暴恐、政治等词汇"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        368,
+        -112
+      ],
+      "id": "3d32862b-c173-4f3c-99e4-4a3553183bb6",
+      "name": "再次重写分镜脚本"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Start').item.json.sence }}\n\n",
+        "options": {
+          "systemMessage": "改写输入的提示词，保留原本的含义，将一些违禁词修改掉，传入的一定有违禁词，尽可能保留原来的含义和内容，直接输出改写的结果，禁止输出描述说明\n\n## 限制\n1.将血腥的场景优化，改成受伤\n2.严禁出现违禁词：血、血液、丧尸、暴恐、政治等词汇"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        368,
+        -368
+      ],
+      "id": "f17c34fa-5648-4109-a9f4-4e688c8e096f",
+      "name": "重写分镜脚本"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "02680adf-af10-44fd-ac14-5a52ab239c46",
+              "name": "output",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        816,
+        -96
+      ],
+      "id": "91cf2b22-e5f6-4886-a197-0226eb74569d",
+      "name": "处理大模型改写后的分镜脚本"
+    },
+    {
+      "parameters": {
+        "url": "=https://ark.cn-beijing.volces.com/api/v3/contents/generations/tasks/{{ $json.id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -560,
+        -704
+      ],
+      "id": "ca2f2b84-6d4f-433b-8a1d-14e1c3c9294e",
+      "name": "查询生成状态"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://ark.cn-beijing.volces.com/api/v3/contents/generations/tasks ",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer "
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"model\": \"doubao-seedance-1-0-lite-i2v-250428\",\n    \"content\": [\n        {\n            \"type\": \"text\",\n            \"text\": \"{{ $('Start').item.json.action.toJsonString().replaceAll('\\\"',\"\") }} --resolution 480p  --duration 5 --camerafixed false --watermark false --ratio 1:1\"\n        },\n        {\n            \"type\": \"image_url\",\n            \"image_url\": {\n                \"url\": \"{{ $json.data }}\"\n            }\n        }\n    ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1184,
+        -272
+      ],
+      "id": "d9c83119-27e8-4daf-a955-3f3cf0753772",
+      "name": "生成视频豆包1.0 pro"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://ark.cn-beijing.volces.com/api/v3/images/generations",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer "
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"model\": \"doubao-seedream-4-5-251128\",\n    \"prompt\": {{ $json.scene.toJsonString() }},\n    \"response_format\": \"url\",\n    \"size\": \"2k\",\n    \"sequential_image_generation\": \"disabled\", \n    \"watermark\": false\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1600,
+        -272
+      ],
+      "id": "d215997c-a82d-4e5e-9d10-9a51cb0f3587",
+      "name": "火山豆包生图"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.model }}",
+                    "rightValue": "火山引擎",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "0052dfaf-c6e4-4b1e-9ce6-ccfa1989c151"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "ff15fe98-35d3-4d91-a1a7-97b699f2e5ba",
+                    "leftValue": "={{ $json.model }}",
+                    "rightValue": "即梦",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -1904,
+        -256
+      ],
+      "id": "2dbada30-de60-4a32-bf3a-36ece0235c6c",
+      "name": "Switch1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1678dd04-4c40-4f7b-9a57-a1a48a9f1011",
+              "name": "data",
+              "value": "={{ $json.list[0] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1424,
+        224
+      ],
+      "id": "22fddb61-3479-4f01-961b-144a81c1d38f",
+      "name": "format1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "ceb4da81-41d7-4f8a-804e-e3f50f5911cf",
+              "leftValue": "={{ $json.list[0].videoUrl }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "83d23cc3-5155-46c8-bb66-220583a68347",
+              "leftValue": "={{ $json.list[0].videoUrl }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notExists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -992,
+        240
+      ],
+      "id": "89ce9ebf-44ca-4c21-bfd3-43c3960b3306",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3b5b3234-f108-4b39-b491-52e8d0e41741",
+              "name": "videoURL",
+              "value": "={{ $json.list[0].videoUrl }} ",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -592,
+        688
+      ],
+      "id": "a7863f13-2021-458b-bdaa-46c0330a1d57",
+      "name": "最终结果1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Start').item.json.sence }}\n\n",
+        "options": {
+          "systemMessage": "改写输入的提示词，保留原本的含义，将一些违禁词修改掉，传入的一定有违禁词，尽可能保留原来的含义和内容，直接输出改写的结果，禁止输出描述说明\n\n## 限制\n1.将血腥的场景优化，改成受伤\n2.严禁出现违禁词：血、血液、丧尸、暴恐、政治等词汇"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        -624,
+        224
+      ],
+      "id": "95b42c61-442e-48a2-9561-6c7188fad2b8",
+      "name": "重写分镜脚本1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        -608,
+        400
+      ],
+      "id": "2df4792e-36ca-427e-b89b-64c205b3b4a9",
+      "name": "DeepSeek Chat Model1",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "w2l1BwFih5cyUWGb",
+          "name": "DeepSeek account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "02680adf-af10-44fd-ac14-5a52ab239c46",
+              "name": "output",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -224,
+        256
+      ],
+      "id": "33596f9a-0d8c-440b-8909-0321ffcf1b47",
+      "name": "处理大模型改写后的分镜脚本1"
+    },
+    {
+      "parameters": {
+        "resource": "img",
+        "operation": "文生图",
+        "prompt": "={{ $('Start').item.json.scene }}",
+        "ratio": "9:16"
+      },
+      "type": "n8n-nodes-jimeng.jimeng",
+      "typeVersion": 1,
+      "position": [
+        -1632,
+        224
+      ],
+      "id": "1d03b4e6-5c9c-4e29-a083-b46d8706cfe4",
+      "name": "即梦文生图",
+      "credentials": {
+        "jimengCredentialsApi": {
+          "id": "ByhuG320YquRIoLE",
+          "name": "jimeng Credentials account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "video",
+        "operation": "图生视频",
+        "prompt": "={{ $('Start').item.json.scene }}",
+        "url": "={{ $json.data }}"
+      },
+      "type": "n8n-nodes-jimeng.jimeng",
+      "typeVersion": 1,
+      "position": [
+        -1200,
+        224
+      ],
+      "id": "d5a21b97-0241-4c6f-9c2d-d4a9bf9ca718",
+      "name": "即梦视频生成",
+      "credentials": {
+        "jimengCredentialsApi": {
+          "id": "ByhuG320YquRIoLE",
+          "name": "jimeng Credentials account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Switch1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "最终结果",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "查询生成状态",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "生成视频豆包1.0 pro2": {
+      "main": [
+        [
+          {
+            "node": "查询生成状态",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "重写分镜脚本",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "再次重写分镜脚本",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "format": {
+      "main": [
+        [
+          {
+            "node": "生成视频豆包1.0 pro",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "再次重写分镜脚本",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "重写分镜脚本",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "再次重写分镜脚本": {
+      "main": [
+        [
+          {
+            "node": "处理大模型改写后的分镜脚本",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "重写分镜脚本": {
+      "main": [
+        [
+          {
+            "node": "处理大模型改写后的分镜脚本",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "处理大模型改写后的分镜脚本": {
+      "main": [
+        [
+          {
+            "node": "生成视频豆包1.0 pro2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "查询生成状态": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "生成视频豆包1.0 pro": {
+      "main": [
+        [
+          {
+            "node": "查询生成状态",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "火山豆包生图": {
+      "main": [
+        [
+          {
+            "node": "format",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch1": {
+      "main": [
+        [
+          {
+            "node": "火山豆包生图",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "即梦文生图",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "format1": {
+      "main": [
+        [
+          {
+            "node": "即梦视频生成",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "重写分镜脚本1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "最终结果1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "重写分镜脚本1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "重写分镜脚本1": {
+      "main": [
+        [
+          {
+            "node": "处理大模型改写后的分镜脚本1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "处理大模型改写后的分镜脚本1": {
+      "main": [
+        [
+          {
+            "node": "即梦视频生成",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "即梦文生图": {
+      "main": [
+        [
+          {
+            "node": "format1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "即梦视频生成": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "7e270f04-b4d6-4e38-ad5e-4a30d67dd229",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4ec3133c8d628113a824c66a73c5bdda7b94b0762c5189e937dc7ec53c5a43ee"
+  },
+  "id": "P5UtF55HVj5xoFz9",
+  "tags": []
+}

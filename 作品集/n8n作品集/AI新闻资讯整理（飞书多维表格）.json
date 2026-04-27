@@ -1,0 +1,1443 @@
+{
+  "name": "实战4-AI新闻资讯整理",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -480,
+        -48
+      ],
+      "id": "1efd3a10-fc89-4281-adde-894a6c9cc4ed",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "url": "https://newsapi.org/v2/everything?q=AI&sortBy=relevancy&apiKey=df89eda449b14b4dafc758fe05bdf961",
+        "sendQuery": true,
+        "specifyQuery": "json",
+        "jsonQuery": "={\n  \"from\": \"{{ $now.minus({ hours: 24 }).toFormat('yyyy-MM-dd') }}\",\n  \"to\": \"{{ $now.toFormat('yyyy-MM-dd') }}\",\n  \"language\": \"en\",\n  \"pagesize\": 20,\n  \"page\": 1\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -272,
+        -48
+      ],
+      "id": "7dd18f41-34fb-4999-8f48-93687190b252",
+      "name": "HTTP Request",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://gnews.io/api/v4/search?q=AI&sortby=relevance&max=20&apikey=fd56eedd2ad52820d42b95ec3c21c04b",
+        "sendQuery": true,
+        "specifyQuery": "json",
+        "jsonQuery": "={\n \n\"from\": \"{{ $now.minus({ hours: 24 }).toFormat('yyyy-MM-dd') }}\",\n  \"to\": \"{{ $now.toFormat('yyyy-MM-dd') }}\",\n  \"pagesize\": 20,\n  \"page\": 1,\n  \"language\": \"en\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -80,
+        32
+      ],
+      "id": "ffc6f48a-d603-4d9a-a51f-c36629498f4f",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 获取输入数据\nconst inputData = $input.all();\n\n// 存储转换后的数据\nconst outputData = [];\n\n// 遍历输入数据\ninputData.forEach(item => {\n  // 检查是否有articles数组\n  if (item.json && item.json.articles && Array.isArray(item.json.articles)) {\n    // 遍历每篇文章\n    item.json.articles.forEach(article => {\n      // 格式化发布日期\n      let formattedDate = '';\n      if (article.publishedAt) {\n        const date = new Date(article.publishedAt);\n        formattedDate = date.toLocaleString('zh-CN', {\n          year: 'numeric',\n          month: '2-digit',\n          day: '2-digit',\n          hour: '2-digit',\n          minute: '2-digit'\n        });\n      }\n\n      // 创建表格行数据\n      const tableRow = {\n        新闻链接: article.url || '',\n        标题: article.title || '',\n        新闻简要: article.description || '',\n        发布日期: formattedDate,\n        作者: article.author || '未知作者'\n      };\n\n      outputData.push({\n        json: tableRow\n      });\n    });\n  }\n});\n\nreturn outputData;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        112,
+        -176
+      ],
+      "id": "e9606df6-d49f-42e4-9dc9-17f94c80a7a4",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 获取 HTTP 请求的输出数据\nconst articles = $json[\"articles\"];\n\n// 初始化表格数据数组\nlet tableData = [];\n\n// 遍历所有文章并将其转换成表格格式\narticles.forEach(article => {\n  const row = {\n    \"新闻链接\": article.url,\n    \"标题\": article.title,\n    \"新闻简要\": article.description,\n    \"发布日期\": article.publishedAt,\n    \"作者\": article.source.name\n  };\n  \n  tableData.push(row);\n});\n\n// 输出结果\nreturn tableData;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        128,
+        32
+      ],
+      "id": "53fa0b90-08cc-4340-b060-7d860ef71f6b",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        384,
+        -80
+      ],
+      "id": "53d258d7-4712-46df-850f-10081acd8442",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "afcc4faa-f5f9-4285-95dc-36fd913f0d27",
+              "leftValue": "={{ $json['新闻链接'] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "77b1d159-8eb6-4f7a-8ed8-263e7299956b",
+              "leftValue": "={{ $json['标题'] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "4748f83c-baa7-47fb-8b1e-5d8f4fe445d9",
+              "leftValue": "={{ $json['发布日期'] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "abf2f816-ff3c-450a-9a4b-e653cac71b32",
+              "leftValue": "={{ $json['作者'] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "32175864-45ba-4603-aa32-2170c3cf82a6",
+              "leftValue": "={{ $json['新闻简要'] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        592,
+        -80
+      ],
+      "id": "e7c709c5-d03e-42aa-b181-a4155d79b04f",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=请翻译{{ $json['标题'] }}和{{ $json['新闻简要'] }}字段为中文，并保留原有的其他字段不变（{{ $json['新闻链接'] }}、{{ $json['发布日期'] }}、{{ $json['作者'] }}）。翻译后的内容需要格式化为以下五个字段：\n\n1. 新闻链接\n2. 标题\n3. 新闻简要\n4. 发布日期\n5. 作者\n\n输出内容必须与下面的格式一致，确保翻译后仍然是有效的JSON格式",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        800,
+        -80
+      ],
+      "id": "d5b650cc-f46a-4fef-822c-d47fbe1e8a03",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        688,
+        224
+      ],
+      "id": "ddfd8c50-5109-4daa-a503-c52cdc1dc264",
+      "name": "DeepSeek Chat Model",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "w2l1BwFih5cyUWGb",
+          "name": "DeepSeek account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n\"新闻链接\": \n\"https://www.wired.com/story/what-kids-think-about-ai-schools/\",\n\"标题\": \n\"What Do Kids Actually Think About AI?\",\n\"新闻简要\": \n\"Parents, teachers, and experts have big opinions about the impacts of AI on young people and education. But what do the students themselves say?\",\n\"发布日期\": \n\"2025/08/19 10:00\",\n\"作者\": \n\"Charley Locke\"\n}",
+        "autoFix": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        880,
+        160
+      ],
+      "id": "94df3196-25c4-4185-ab4f-ccf5f1b49660",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "resource": "bitable",
+        "operation": "bitable:table:record:add",
+        "app_toke": "JDESbprZoaefCXshUAQcVqzenOg",
+        "table_id": "tbln2Y5miG1xQDW1",
+        "body": "=\n    {\n      \"fields\": {\n        \"新闻链接\": \"{{ $json.fields['新闻链接'] }}\",\n        \"标题\": \"{{ $json.fields['标题'] }}\",\n        \"新闻简要\": \"{{ $json.fields['新闻简要'] }}\",\n        \"发布日期\": \"{{ $json.fields['发布日期'] }}\",\n        \"作者\": \"{{ $json.fields['作者'] }}\"\n      }\n    }\n"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        1408,
+        -80
+      ],
+      "id": "13e504e0-08e5-4c50-b3bc-4a82cc0adc65",
+      "name": "Bitable:table:record:add bitable",
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "GvhNUNC0qryGJE05",
+          "name": "Feishu account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 处理每个字段，清理控制字符+转义特殊符号\nreturn $input.all().map(item => {\n  const cleanField = (value) => {\n    if (typeof value !== 'string') return value;\n    // 清理控制字符 + 转义双引号\n    return value.replace(/[\\x00-\\x1F\\x7F]/g, '').replace(/\"/g, '\\\\\"');\n  };\n\n  return {\n    json: {\n      fields: {\n        \"新闻链接\": cleanField(item.json.output['新闻链接']),\n        \"标题\": cleanField(item.json.output['标题']),\n        \"新闻简要\": cleanField(item.json.output['新闻简要']),\n        \"发布日期\": cleanField(item.json.output['发布日期']),\n        \"作者\": cleanField(item.json.output['作者'])\n      }\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1152,
+        -80
+      ],
+      "id": "6117337c-f2a1-40c8-b2c3-8d56e9096ac2",
+      "name": "Code in JavaScript2"
+    }
+  ],
+  "pinData": {
+    "HTTP Request": [
+      {
+        "json": {
+          "status": "ok",
+          "totalResults": 1697,
+          "articles": [
+            {
+              "source": {
+                "id": "the-verge",
+                "name": "The Verge"
+              },
+              "author": "Terrence O’Brien",
+              "title": "Musicians are getting really tired of this AI clone ‘bullshit’",
+              "description": "\"Not ideal.\" \"Completely unacceptable.\" \"Shameless.\" \"Predatory.\" \"Some bullshit.\" \"Total bullshit.\" This is how musicians, producers, and others in the industry are describing the relentless spread of AI clones. Of course, AI fakes aren't new, but as the sca…",
+              "url": "https://www.theverge.com/report/844454/musicians-tired-of-ai-clones",
+              "urlToImage": "https://platform.theverge.com/wp-content/uploads/sites/2/2025/12/gettyimages-1201174248.jpg?quality=90&strip=all&crop=0%2C10.732984293194%2C100%2C78.534031413613&w=1200",
+              "publishedAt": "2025-12-15T11:14:23Z",
+              "content": "<ul><li></li><li></li><li></li></ul>\r\nMusicians are getting really tired of this AI clone bullshit\r\nThe anger over fake songs is boiling over into action.\r\nby\r\nTerrence O'BrienClose\r\nTerrence O'Brien… [+8533 chars]"
+            },
+            {
+              "source": {
+                "id": "the-verge",
+                "name": "The Verge"
+              },
+              "author": "Josh Dzieza, Hayden Field",
+              "title": "Feeding the machine",
+              "description": "When he was 19 years old, Brendan Foody started Mercor with two of his high school friends as a way for his other friends, who also had startups, to hire software engineers overseas. It launched in 2023 as essentially a staffing agency, albeit a highly automa…",
+              "url": "https://www.theverge.com/cs/features/831818/ai-mercor-handshake-scale-surge-staffing-companies",
+              "urlToImage": "https://platform.theverge.com/wp-content/uploads/sites/2/2025/12/lede.jpg?quality=90&strip=all&crop=0%2C10.732984293194%2C100%2C78.534031413613&w=1200",
+              "publishedAt": "2025-12-15T12:02:11Z",
+              "content": "When he was 19 years old, Brendan Foody started Mercor with two of his high school friends as a way for his other friends, who also had startups, to hire software engineers overseas. It launched in 2… [+27843 chars]"
+            },
+            {
+              "source": {
+                "id": null,
+                "name": "Gizmodo.com"
+              },
+              "author": "Mike Pearl",
+              "title": "How the Biggest Monopoly in AI Is Keeping Its Throne in 2026 and Beyond",
+              "description": "It's unnerving how much of the global economy is dependent on $400 million lithography machines.",
+              "url": "https://gizmodo.com/asml-high-na-transition-2000699553",
+              "urlToImage": "https://gizmodo.com/app/uploads/2025/12/asml-1-1200x675.jpg",
+              "publishedAt": "2025-12-15T10:30:03Z",
+              "content": "As a new Bloomberg profile of the Dutch lithography giant ASML points out, the global economy is counting on one monopolys ability to shoot lasers at tin droplets again, but do it even better this ti… [+2989 chars]"
+            },
+            {
+              "source": {
+                "id": null,
+                "name": "Android Central"
+              },
+              "author": "sanujb6@gmail.com (Sanuj Bhatia) , Sanuj Bhatia",
+              "title": "Galaxy S26 may debut with software features currently hidden in One UI 8.5",
+              "description": "Leak suggests Samsung is holding back several software and AI features for the Galaxy S26 series.",
+              "url": "https://www.androidcentral.com/phones/samsung-galaxy/galaxy-s26-may-debut-with-software-features-hidden-in-one-ui-8-5",
+              "urlToImage": "https://cdn.mos.cms.futurecdn.net/DLipdaEkaEHA3q6rAngzoF-2560-80.jpg",
+              "publishedAt": "2025-12-15T13:53:00Z",
+              "content": "What you need to know\r\n<ul><li>Samsung is hiding several One UI 8.5 features that will debut first on the upcoming Galaxy S26 series.</li><li>One UI 8.5 includes an AI notification summary feature us… [+2691 chars]"
+            },
+            {
+              "source": {
+                "id": null,
+                "name": "Harvard Business Review"
+              },
+              "author": "Yi Cao, Long Chen",
+              "title": "Corporate Disclosure in the Age of AI",
+              "description": "New tools are enabling anyone to infer strategic insights from seemingly innocuous information.",
+              "url": "https://hbr.org/2025/12/corporate-disclosure-in-the-age-of-ai",
+              "urlToImage": "https://hbr.org/resources/images/article_assets/2025/12/Dec25_13_2216481617.jpg",
+              "publishedAt": "2025-12-15T15:00:00Z",
+              "content": "Traditionally concerns around corporate disclosure have been restricted to a select set of releasesfinancial reports filed with regulators such as the SEC, earnings calls, etc.that were considered ma… [+32 chars]"
+            },
+            {
+              "source": {
+                "id": null,
+                "name": "Android Central"
+              },
+              "author": "techkritiko@gmail.com (Jay Bonggolto) , Jay Bonggolto",
+              "title": "Disney hits Google with a cease-and-desist over AI copyright claims",
+              "description": "Disney just sued Google, calling its AI a \"virtual vending machine\" for pirating characters like Mickey Mouse and Elsa.",
+              "url": "https://www.androidcentral.com/apps-software/disney-hits-google-with-a-cease-and-desist-over-ai-copyright-claims",
+              "urlToImage": "https://cdn.mos.cms.futurecdn.net/G2ACgqJo6J4HcuDFkDnkub-2560-80.jpg",
+              "publishedAt": "2025-12-15T13:31:31Z",
+              "content": "What you need to know\r\n<ul><li>Disney has sent Google a cease-and-desist over alleged large-scale use of copyrighted characters for AI training and outputs.</li><li>The claims are broad and specific,… [+2553 chars]"
+            },
+            {
+              "source": {
+                "id": null,
+                "name": "Android Central"
+              },
+              "author": "bradypsnyder@gmail.com (Brady Snyder) , Brady Snyder",
+              "title": "Google's Search Live conversations in AI Mode are now 'more fluid and expressive'",
+              "description": "Google's AI Mode now supports a more natural-sounding voice that can be customized to speak faster or slower when you go live.",
+              "url": "https://www.androidcentral.com/apps-software/ai/googles-search-live-conversations-in-ai-mode-are-now-more-fluid-and-expressive",
+              "urlToImage": "https://cdn.mos.cms.futurecdn.net/qp6AKXeh96jvyE7u9MfiyE-1728-80.png",
+              "publishedAt": "2025-12-15T14:22:00Z",
+              "content": "What you need to know\r\n<ul><li>Google is using an upgraded Gemini native audio model for Search Live, bringing more dynamic conversations to the AI feature.</li><li>Search Live's voice can now make c… [+2465 chars]"
+            },
+            {
+              "source": {
+                "id": "business-insider",
+                "name": "Business Insider"
+              },
+              "author": "Lee Chong Ming",
+              "title": "AI is triggering a quiet hiring comeback for some entry-level talent, say public company CEOs",
+              "description": "A new survey shows CEOs expect AI to boost hiring in 2026, especially for entry-level roles.",
+              "url": "https://www.businessinsider.com/ai-hiring-comeback-entry-level-jobs-ceo-teneo-survey-2025-12",
+              "urlToImage": "https://i.insider.com/693f845964858d02d216c7d1?width=1200&format=jpeg",
+              "publishedAt": "2025-12-15T05:15:21Z",
+              "content": "CEOs say AI will drive more hiring next year, with entry-level and technical roles set to grow, according to a new global survey.Nitat Termmee/Getty Images\r\n<ul><li>A new survey shows CEOs expect AI … [+3063 chars]"
+            },
+            {
+              "source": {
+                "id": "business-insider",
+                "name": "Business Insider"
+              },
+              "author": "Jyoti Mann,Pranav Dixit",
+              "title": "Inside Meta's 'year of intensity' as its AI overhaul, culture wars, and crackdowns collide",
+              "description": "Meta's AI overhaul, culture shifts, layoffs, and performance crackdowns have sparked internal clashes, employee exits, and morale concerns in 2025.",
+              "url": "https://www.businessinsider.com/meta-ai-overhaul-mark-zuckerberg-year-intensity-2025-12",
+              "urlToImage": "https://i.insider.com/693709c77ecd1d1da6631d51?width=1200&format=jpeg",
+              "publishedAt": "2025-12-15T10:06:30Z",
+              "content": "When CEO Mark Zuckerberg warned Meta employees in January to \"buckle up\" for an \"intense\" year, he meant it.\r\nDetermined to dominate the next era of AI, Meta has spent the past year in blitz mode. Zu… [+11313 chars]"
+            },
+            {
+              "source": {
+                "id": "business-insider",
+                "name": "Business Insider"
+              },
+              "author": "Thibault Spirlet",
+              "title": "Sergey Brin, who came back to Google to work on Gemini, says staying retired would have been a 'big mistake'",
+              "description": "Sergey Brin says the pandemic pushed him back into Google, where he's now helping drive its Gemini AI efforts.",
+              "url": "https://www.businessinsider.com/sergey-brin-says-leaving-google-before-gemini-was-big-mistake-2025-12",
+              "urlToImage": "https://i.insider.com/693fe6a064858d02d216c930?width=1200&format=jpeg",
+              "publishedAt": "2025-12-15T11:37:38Z",
+              "content": "Google cofounder Sergey Brin says a short-lived retirement left him restless — and pulled him back into the race to build Google's Gemini.Axelle/Bauer-Griffin/FilmMagic via Getty Images\r\n<ul><li>Serg… [+2536 chars]"
+            },
+            {
+              "source": {
+                "id": null,
+                "name": "Slashdot.org"
+              },
+              "author": "EditorDavid",
+              "title": "CEOS Plan to Spend More on AI in 2026 - Despite Spotty Returns",
+              "description": "The Wall Street Journal reports that 68% of CEOs \"plan to spend even more on AI in 2026, according to an annual survey of more than 350 public-company CEOs from advisory firm Teneo.\"\n\n\nAnd yet \"less than half of current AI projects had generated more in retur…",
+              "url": "https://it.slashdot.org/story/25/12/15/0013251/ceos-plan-to-spend-more-on-ai-in-2026---despite-spotty-returns",
+              "urlToImage": "https://a.fsdn.com/sd/topics/ai_64.png",
+              "publishedAt": "2025-12-15T00:17:00Z",
+              "content": "They reported the most success using AI in marketing and customer service and challenges using it in higher-risk areas such as security, legal and human resources.Teneo also surveyed about 400 instit… [+415 chars]"
+            },
+            {
+              "source": {
+                "id": null,
+                "name": "Semafor.com"
+              },
+              "author": "Max Tani",
+              "title": "'Iterate through': Why The Washington Post launched an error-ridden AI product",
+              "description": "Between 68% and 84% of AI-generated scripts failed the Post's own internal testing, but the paper launched the AI podcast feature anyway.",
+              "url": "https://www.semafor.com/article/12/14/2025/iterate-through-why-the-washington-post-launched-an-error-ridden-ai-product",
+              "urlToImage": "https://media.zenfs.com/en/semafor_310/64a3ea043e65203a37bb8a76ec6d41e6",
+              "publishedAt": "2025-12-15T02:00:42Z",
+              "content": "The Scoop\r\nThe Washington Post began putting out AI-generated podcasts even after internal tests found that the AI tech introduced errors and bias into the publications reporting.\r\nMore than two-thir… [+9121 chars]"
+            },
+            {
+              "source": {
+                "id": null,
+                "name": "Android Central"
+              },
+              "author": "bradypsnyder@gmail.com (Brady Snyder) , Brady Snyder",
+              "title": "Google's upgraded Gemini 2.5 Flash Native Audio model makes AI more conversational",
+              "description": "Gemini's voice-assisted features are getting smoother conversations, better function calling, and complex instruction following with a model update.",
+              "url": "https://www.androidcentral.com/apps-software/ai/googles-upgraded-gemini-2-5-flash-native-audio-model-makes-ai-more-conversational",
+              "urlToImage": "https://cdn.mos.cms.futurecdn.net/oNS3AdHrm2GQMjJcEachwg-2560-80.jpg",
+              "publishedAt": "2025-12-15T15:03:00Z",
+              "content": "<ul><li>Gemini Live and Search Live are now using Google's new-and-improved Gemini 2.5 Flash Native Audio model.</li><li>The upgraded model is more conversational, can interact with external sources … [+2660 chars]"
+            },
+            {
+              "source": {
+                "id": null,
+                "name": "MacRumors"
+              },
+              "author": "Tim Hardwick",
+              "title": "Kindle App Now Includes AI Assistant for Character and Plot Questions",
+              "description": "Amazon has added a new feature to its Kindle app on iOS that uses artificial intelligence to answers questions about the book you're reading, the company has announced.\n\n\n\n\n\nAvailable in the U.S. only, \"Ask This Book\" is described as an \"expert reading assist…",
+              "url": "https://www.macrumors.com/2025/12/15/kindle-app-ios-gains-in-book-ai-chatbot/",
+              "urlToImage": "https://images.macrumors.com/t/NIlOa3tTvLcHOtCoEiff3xwcSxA=/2000x/article-new/2025/12/kindle-ask-this-book-ios.jpg",
+              "publishedAt": "2025-12-15T15:16:00Z",
+              "content": "Amazon has added a new feature to its Kindle app on iOS that uses artificial intelligence to answers questions about the book you're reading, the company has announced.\r\nAvailable in the U.S. only, \"… [+1084 chars]"
+            },
+            {
+              "source": {
+                "id": "business-insider",
+                "name": "Business Insider"
+              },
+              "author": "Amanda Hoover",
+              "title": "The year coding changed forever",
+              "description": "Optimism, laziness, and magical thinking: The year vibe coding took over tech.",
+              "url": "https://www.businessinsider.com/year-coding-changed-forever-silicon-valley-2025-12",
+              "urlToImage": "https://i.insider.com/693c966a64858d02d216c23d?width=1200&format=jpeg",
+              "publishedAt": "2025-12-15T09:11:01Z",
+              "content": "Sriraam Raja, the founding engineer at the software company Decode, has been using generative AI to write code for two years. He says he can get projects done about twice as fast when he uses a chatb… [+9002 chars]"
+            },
+            {
+              "source": {
+                "id": null,
+                "name": "Yahoo Entertainment"
+              },
+              "author": "Faizan Farooque",
+              "title": "Intel shares rise on tech strength and acquisition talks",
+              "description": "Report says chipmaker is in advanced discussions to buy AI startup SambaNova.",
+              "url": "https://finance.yahoo.com/news/intel-shares-rise-tech-strength-144257699.html",
+              "urlToImage": "https://s.yimg.com/ny/api/res/1.2/WoUMlppRwSVCl_k5uEl4xw--/YXBwaWQ9aGlnaGxhbmRlcjt3PTEyMDA7aD00ODc-/https://media.zenfs.com/en/us.finance.gurufocus/06ee28153af34ee682f043e62519b8dd",
+              "publishedAt": "2025-12-15T14:42:57Z",
+              "content": "This article first appeared on GuruFocus.\r\nIntel Corp. (INTC, Financials) shares went up as tech markets in general rose and news broke that the chipmaker is in advanced discussions to buy the AI fir… [+980 chars]"
+            },
+            {
+              "source": {
+                "id": null,
+                "name": "Kotaku"
+              },
+              "author": "John Walker",
+              "title": "This Week’s Saturday Night Live Was Drowning In Grim AI Slop",
+              "description": "People were quick to react in horror at the shortcuts and crappy images in the episode\nThe post This Week’s Saturday Night Live Was Drowning In Grim AI Slop appeared first on Kotaku.",
+              "url": "https://kotaku.com/snl-ai-slop-saturday-night-live-nbc-2000653399",
+              "urlToImage": "https://kotaku.com/app/uploads/2025/12/snl_ai_5-1-1200x675.jpg",
+              "publishedAt": "2025-12-15T14:57:38Z",
+              "content": "One of the huge joys of Saturday Night Live over the last 50 years has been the extraordinary level of craft that goes into every episode. The sketches might often suck, but the sets, costumes and ma… [+3863 chars]"
+            },
+            {
+              "source": {
+                "id": null,
+                "name": "Android Central"
+              },
+              "author": "techkritiko@gmail.com (Jay Bonggolto) , Jay Bonggolto",
+              "title": "Google gives Gemini image markup tools to stop the app from guessing",
+              "description": "You can finally make Gemini look where you point with new image markup tools.",
+              "url": "https://www.androidcentral.com/apps-software/google-gives-gemini-image-markup-tools-to-stop-the-app-from-guessing",
+              "urlToImage": "https://cdn.mos.cms.futurecdn.net/Dw7ieTGyMC3hkHe7JXHoqb-2560-80.jpg",
+              "publishedAt": "2025-12-15T14:32:00Z",
+              "content": "What you need to know\r\n<ul><li>Gemini now lets you draw directly on images, so you can show the AI exactly what you mean instead of overexplaining in text.</li><li>You can circle, highlight, sketch, … [+2594 chars]"
+            },
+            {
+              "source": {
+                "id": null,
+                "name": "Yahoo Entertainment"
+              },
+              "author": "Reuters",
+              "title": "Nvidia unveils new open-source AI models amid boom in Chinese offerings",
+              "description": "Nvidia on Monday unveiled a new family of open-source artificial intelligence models that it says will be faster, cheaper and ​smarter than its previous...",
+              "url": "https://finance.yahoo.com/news/nvidia-unveils-open-source-ai-140424565.html",
+              "urlToImage": "https://media.zenfs.com/en/reuters-finance.com/31397226d241d376e5cffbf13490e071",
+              "publishedAt": "2025-12-15T14:04:24Z",
+              "content": "SAN FRANCISCO, Dec 15 (Reuters) - Nvidia (NVDA) on Monday unveiled a new family of open-source artificial intelligence models that it says will be faster, cheaper and smarter than its previous offeri… [+2100 chars]"
+            },
+            {
+              "source": {
+                "id": null,
+                "name": "Yahoo Entertainment"
+              },
+              "author": "Charles Lamanna",
+              "title": "I lead Microsoft’s enterprise AI agent strategy. Here’s what every company should know about how agents will rewrite work",
+              "description": "History shows that breakthrough technologies don’t just slot into existing systems, they make us rethink those systems entirely.",
+              "url": "https://finance.yahoo.com/news/lead-microsoft-enterprise-ai-agent-140500171.html",
+              "urlToImage": "https://s.yimg.com/ny/api/res/1.2/3bHHc_qeWdhil8nuk.2_.w--/YXBwaWQ9aGlnaGxhbmRlcjt3PTEyMDA7aD0xMDgz/https://media.zenfs.com/en/fortune_175/9619c48f92e42495530233c1be9da112",
+              "publishedAt": "2025-12-15T14:05:00Z",
+              "content": "Across customers and industries, I am seeing AI agents move into the workflows that matter most, and theyre already beginning to transform how businesses work and lead.\r\nAgents connect AI to tools, A… [+6346 chars]"
+            }
+          ]
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "Merge": [
+      {
+        "json": {
+          "新闻链接": "https://www.theverge.com/report/844454/musicians-tired-of-ai-clones",
+          "标题": "Musicians are getting really tired of this AI clone ‘bullshit’",
+          "新闻简要": "\"Not ideal.\" \"Completely unacceptable.\" \"Shameless.\" \"Predatory.\" \"Some bullshit.\" \"Total bullshit.\" This is how musicians, producers, and others in the industry are describing the relentless spread of AI clones. Of course, AI fakes aren't new, but as the sca…",
+          "发布日期": "2025/12/15 11:14",
+          "作者": "Terrence O’Brien"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "新闻链接": "https://www.theverge.com/cs/features/831818/ai-mercor-handshake-scale-surge-staffing-companies",
+          "标题": "Feeding the machine",
+          "新闻简要": "When he was 19 years old, Brendan Foody started Mercor with two of his high school friends as a way for his other friends, who also had startups, to hire software engineers overseas. It launched in 2023 as essentially a staffing agency, albeit a highly automa…",
+          "发布日期": "2025/12/15 12:02",
+          "作者": "Josh Dzieza, Hayden Field"
+        },
+        "pairedItem": {
+          "item": 1
+        }
+      },
+      {
+        "json": {
+          "新闻链接": "https://gizmodo.com/asml-high-na-transition-2000699553",
+          "标题": "How the Biggest Monopoly in AI Is Keeping Its Throne in 2026 and Beyond",
+          "新闻简要": "It's unnerving how much of the global economy is dependent on $400 million lithography machines.",
+          "发布日期": "2025/12/15 10:30",
+          "作者": "Mike Pearl"
+        },
+        "pairedItem": {
+          "item": 2
+        }
+      },
+      {
+        "json": {
+          "新闻链接": "https://www.androidcentral.com/phones/samsung-galaxy/galaxy-s26-may-debut-with-software-features-hidden-in-one-ui-8-5",
+          "标题": "Galaxy S26 may debut with software features currently hidden in One UI 8.5",
+          "新闻简要": "Leak suggests Samsung is holding back several software and AI features for the Galaxy S26 series.",
+          "发布日期": "2025/12/15 13:53",
+          "作者": "sanujb6@gmail.com (Sanuj Bhatia) , Sanuj Bhatia"
+        },
+        "pairedItem": {
+          "item": 3
+        }
+      },
+      {
+        "json": {
+          "新闻链接": "https://hbr.org/2025/12/corporate-disclosure-in-the-age-of-ai",
+          "标题": "Corporate Disclosure in the Age of AI",
+          "新闻简要": "New tools are enabling anyone to infer strategic insights from seemingly innocuous information.",
+          "发布日期": "2025/12/15 15:00",
+          "作者": "Yi Cao, Long Chen"
+        },
+        "pairedItem": {
+          "item": 4
+        }
+      },
+      {
+        "json": {
+          "新闻链接": "https://www.androidcentral.com/apps-software/disney-hits-google-with-a-cease-and-desist-over-ai-copyright-claims",
+          "标题": "Disney hits Google with a cease-and-desist over AI copyright claims",
+          "新闻简要": "Disney just sued Google, calling its AI a \"virtual vending machine\" for pirating characters like Mickey Mouse and Elsa.",
+          "发布日期": "2025/12/15 13:31",
+          "作者": "techkritiko@gmail.com (Jay Bonggolto) , Jay Bonggolto"
+        },
+        "pairedItem": {
+          "item": 5
+        }
+      },
+      {
+        "json": {
+          "新闻链接": "https://www.androidcentral.com/apps-software/ai/googles-search-live-conversations-in-ai-mode-are-now-more-fluid-and-expressive",
+          "标题": "Google's Search Live conversations in AI Mode are now 'more fluid and expressive'",
+          "新闻简要": "Google's AI Mode now supports a more natural-sounding voice that can be customized to speak faster or slower when you go live.",
+          "发布日期": "2025/12/15 14:22",
+          "作者": "bradypsnyder@gmail.com (Brady Snyder) , Brady Snyder"
+        },
+        "pairedItem": {
+          "item": 6
+        }
+      },
+      {
+        "json": {
+          "新闻链接": "https://www.businessinsider.com/ai-hiring-comeback-entry-level-jobs-ceo-teneo-survey-2025-12",
+          "标题": "AI is triggering a quiet hiring comeback for some entry-level talent, say public company CEOs",
+          "新闻简要": "A new survey shows CEOs expect AI to boost hiring in 2026, especially for entry-level roles.",
+          "发布日期": "2025/12/15 05:15",
+          "作者": "Lee Chong Ming"
+        },
+        "pairedItem": {
+          "item": 7
+        }
+      },
+      {
+        "json": {
+          "新闻链接": "https://www.businessinsider.com/meta-ai-overhaul-mark-zuckerberg-year-intensity-2025-12",
+          "标题": "Inside Meta's 'year of intensity' as its AI overhaul, culture wars, and crackdowns collide",
+          "新闻简要": "Meta's AI overhaul, culture shifts, layoffs, and performance crackdowns have sparked internal clashes, employee exits, and morale concerns in 2025.",
+          "发布日期": "2025/12/15 10:06",
+          "作者": "Jyoti Mann,Pranav Dixit"
+        },
+        "pairedItem": {
+          "item": 8
+        }
+      },
+      {
+        "json": {
+          "新闻链接": "https://www.businessinsider.com/sergey-brin-says-leaving-google-before-gemini-was-big-mistake-2025-12",
+          "标题": "Sergey Brin, who came back to Google to work on Gemini, says staying retired would have been a 'big mistake'",
+          "新闻简要": "Sergey Brin says the pandemic pushed him back into Google, where he's now helping drive its Gemini AI efforts.",
+          "发布日期": "2025/12/15 11:37",
+          "作者": "Thibault Spirlet"
+        },
+        "pairedItem": {
+          "item": 9
+        }
+      },
+      {
+        "json": {
+          "新闻链接": "https://it.slashdot.org/story/25/12/15/0013251/ceos-plan-to-spend-more-on-ai-in-2026---despite-spotty-returns",
+          "标题": "CEOS Plan to Spend More on AI in 2026 - Despite Spotty Returns",
+          "新闻简要": "The Wall Street Journal reports that 68% of CEOs \"plan to spend even more on AI in 2026, according to an annual survey of more than 350 public-company CEOs from advisory firm Teneo.\"\n\n\nAnd yet \"less than half of current AI projects had generated more in retur…",
+          "发布日期": "2025/12/15 00:17",
+          "作者": "EditorDavid"
+        },
+        "pairedItem": {
+          "item": 10
+        }
+      },
+      {
+        "json": {
+          "新闻链接": "https://www.semafor.com/article/12/14/2025/iterate-through-why-the-washington-post-launched-an-error-ridden-ai-product",
+          "标题": "'Iterate through': Why The Washington Post launched an error-ridden AI product",
+          "新闻简要": "Between 68% and 84% of AI-generated scripts failed the Post's own internal testing, but the paper launched the AI podcast feature anyway.",
+          "发布日期": "2025/12/15 02:00",
+          "作者": "Max Tani"
+        },
+        "pairedItem": {
+          "item": 11
+        }
+      },
+      {
+        "json": {
+          "新闻链接": "https://www.androidcentral.com/apps-software/ai/googles-upgraded-gemini-2-5-flash-native-audio-model-makes-ai-more-conversational",
+          "标题": "Google's upgraded Gemini 2.5 Flash Native Audio model makes AI more conversational",
+          "新闻简要": "Gemini's voice-assisted features are getting smoother conversations, better function calling, and complex instruction following with a model update.",
+          "发布日期": "2025/12/15 15:03",
+          "作者": "bradypsnyder@gmail.com (Brady Snyder) , Brady Snyder"
+        },
+        "pairedItem": {
+          "item": 12
+        }
+      },
+      {
+        "json": {
+          "新闻链接": "https://www.macrumors.com/2025/12/15/kindle-app-ios-gains-in-book-ai-chatbot/",
+          "标题": "Kindle App Now Includes AI Assistant for Character and Plot Questions",
+          "新闻简要": "Amazon has added a new feature to its Kindle app on iOS that uses artificial intelligence to answers questions about the book you're reading, the company has announced.\n\n\n\n\n\nAvailable in the U.S. only, \"Ask This Book\" is described as an \"expert reading assist…",
+          "发布日期": "2025/12/15 15:16",
+          "作者": "Tim Hardwick"
+        },
+        "pairedItem": {
+          "item": 13
+        }
+      },
+      {
+        "json": {
+          "新闻链接": "https://www.businessinsider.com/year-coding-changed-forever-silicon-valley-2025-12",
+          "标题": "The year coding changed forever",
+          "新闻简要": "Optimism, laziness, and magical thinking: The year vibe coding took over tech.",
+          "发布日期": "2025/12/15 09:11",
+          "作者": "Amanda Hoover"
+        },
+        "pairedItem": {
+          "item": 14
+        }
+      },
+      {
+        "json": {
+          "新闻链接": "https://finance.yahoo.com/news/intel-shares-rise-tech-strength-144257699.html",
+          "标题": "Intel shares rise on tech strength and acquisition talks",
+          "新闻简要": "Report says chipmaker is in advanced discussions to buy AI startup SambaNova.",
+          "发布日期": "2025/12/15 14:42",
+          "作者": "Faizan Farooque"
+        },
+        "pairedItem": {
+          "item": 15
+        }
+      },
+      {
+        "json": {
+          "新闻链接": "https://kotaku.com/snl-ai-slop-saturday-night-live-nbc-2000653399",
+          "标题": "This Week’s Saturday Night Live Was Drowning In Grim AI Slop",
+          "新闻简要": "People were quick to react in horror at the shortcuts and crappy images in the episode\nThe post This Week’s Saturday Night Live Was Drowning In Grim AI Slop appeared first on Kotaku.",
+          "发布日期": "2025/12/15 14:57",
+          "作者": "John Walker"
+        },
+        "pairedItem": {
+          "item": 16
+        }
+      },
+      {
+        "json": {
+          "新闻链接": "https://www.androidcentral.com/apps-software/google-gives-gemini-image-markup-tools-to-stop-the-app-from-guessing",
+          "标题": "Google gives Gemini image markup tools to stop the app from guessing",
+          "新闻简要": "You can finally make Gemini look where you point with new image markup tools.",
+          "发布日期": "2025/12/15 14:32",
+          "作者": "techkritiko@gmail.com (Jay Bonggolto) , Jay Bonggolto"
+        },
+        "pairedItem": {
+          "item": 17
+        }
+      },
+      {
+        "json": {
+          "新闻链接": "https://finance.yahoo.com/news/nvidia-unveils-open-source-ai-140424565.html",
+          "标题": "Nvidia unveils new open-source AI models amid boom in Chinese offerings",
+          "新闻简要": "Nvidia on Monday unveiled a new family of open-source artificial intelligence models that it says will be faster, cheaper and ​smarter than its previous...",
+          "发布日期": "2025/12/15 14:04",
+          "作者": "Reuters"
+        },
+        "pairedItem": {
+          "item": 18
+        }
+      },
+      {
+        "json": {
+          "新闻链接": "https://finance.yahoo.com/news/lead-microsoft-enterprise-ai-agent-140500171.html",
+          "标题": "I lead Microsoft’s enterprise AI agent strategy. Here’s what every company should know about how agents will rewrite work",
+          "新闻简要": "History shows that breakthrough technologies don’t just slot into existing systems, they make us rethink those systems entirely.",
+          "发布日期": "2025/12/15 14:05",
+          "作者": "Charles Lamanna"
+        },
+        "pairedItem": {
+          "item": 19
+        }
+      }
+    ],
+    "Filter": [
+      {
+        "json": {
+          "新闻链接": "https://www.theverge.com/report/844454/musicians-tired-of-ai-clones",
+          "标题": "Musicians are getting really tired of this AI clone ‘bullshit’",
+          "新闻简要": "\"Not ideal.\" \"Completely unacceptable.\" \"Shameless.\" \"Predatory.\" \"Some bullshit.\" \"Total bullshit.\" This is how musicians, producers, and others in the industry are describing the relentless spread of AI clones. Of course, AI fakes aren't new, but as the sca…",
+          "发布日期": "2025/12/15 11:14",
+          "作者": "Terrence O’Brien"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "新闻链接": "https://www.theverge.com/cs/features/831818/ai-mercor-handshake-scale-surge-staffing-companies",
+          "标题": "Feeding the machine",
+          "新闻简要": "When he was 19 years old, Brendan Foody started Mercor with two of his high school friends as a way for his other friends, who also had startups, to hire software engineers overseas. It launched in 2023 as essentially a staffing agency, albeit a highly automa…",
+          "发布日期": "2025/12/15 12:02",
+          "作者": "Josh Dzieza, Hayden Field"
+        },
+        "pairedItem": {
+          "item": 1
+        }
+      },
+      {
+        "json": {
+          "新闻链接": "https://gizmodo.com/asml-high-na-transition-2000699553",
+          "标题": "How the Biggest Monopoly in AI Is Keeping Its Throne in 2026 and Beyond",
+          "新闻简要": "It's unnerving how much of the global economy is dependent on $400 million lithography machines.",
+          "发布日期": "2025/12/15 10:30",
+          "作者": "Mike Pearl"
+        },
+        "pairedItem": {
+          "item": 2
+        }
+      },
+      {
+        "json": {
+          "新闻链接": "https://www.androidcentral.com/phones/samsung-galaxy/galaxy-s26-may-debut-with-software-features-hidden-in-one-ui-8-5",
+          "标题": "Galaxy S26 may debut with software features currently hidden in One UI 8.5",
+          "新闻简要": "Leak suggests Samsung is holding back several software and AI features for the Galaxy S26 series.",
+          "发布日期": "2025/12/15 13:53",
+          "作者": "sanujb6@gmail.com (Sanuj Bhatia) , Sanuj Bhatia"
+        },
+        "pairedItem": {
+          "item": 3
+        }
+      },
+      {
+        "json": {
+          "新闻链接": "https://hbr.org/2025/12/corporate-disclosure-in-the-age-of-ai",
+          "标题": "Corporate Disclosure in the Age of AI",
+          "新闻简要": "New tools are enabling anyone to infer strategic insights from seemingly innocuous information.",
+          "发布日期": "2025/12/15 15:00",
+          "作者": "Yi Cao, Long Chen"
+        },
+        "pairedItem": {
+          "item": 4
+        }
+      },
+      {
+        "json": {
+          "新闻链接": "https://www.androidcentral.com/apps-software/disney-hits-google-with-a-cease-and-desist-over-ai-copyright-claims",
+          "标题": "Disney hits Google with a cease-and-desist over AI copyright claims",
+          "新闻简要": "Disney just sued Google, calling its AI a \"virtual vending machine\" for pirating characters like Mickey Mouse and Elsa.",
+          "发布日期": "2025/12/15 13:31",
+          "作者": "techkritiko@gmail.com (Jay Bonggolto) , Jay Bonggolto"
+        },
+        "pairedItem": {
+          "item": 5
+        }
+      },
+      {
+        "json": {
+          "新闻链接": "https://www.androidcentral.com/apps-software/ai/googles-search-live-conversations-in-ai-mode-are-now-more-fluid-and-expressive",
+          "标题": "Google's Search Live conversations in AI Mode are now 'more fluid and expressive'",
+          "新闻简要": "Google's AI Mode now supports a more natural-sounding voice that can be customized to speak faster or slower when you go live.",
+          "发布日期": "2025/12/15 14:22",
+          "作者": "bradypsnyder@gmail.com (Brady Snyder) , Brady Snyder"
+        },
+        "pairedItem": {
+          "item": 6
+        }
+      },
+      {
+        "json": {
+          "新闻链接": "https://www.businessinsider.com/ai-hiring-comeback-entry-level-jobs-ceo-teneo-survey-2025-12",
+          "标题": "AI is triggering a quiet hiring comeback for some entry-level talent, say public company CEOs",
+          "新闻简要": "A new survey shows CEOs expect AI to boost hiring in 2026, especially for entry-level roles.",
+          "发布日期": "2025/12/15 05:15",
+          "作者": "Lee Chong Ming"
+        },
+        "pairedItem": {
+          "item": 7
+        }
+      },
+      {
+        "json": {
+          "新闻链接": "https://www.businessinsider.com/meta-ai-overhaul-mark-zuckerberg-year-intensity-2025-12",
+          "标题": "Inside Meta's 'year of intensity' as its AI overhaul, culture wars, and crackdowns collide",
+          "新闻简要": "Meta's AI overhaul, culture shifts, layoffs, and performance crackdowns have sparked internal clashes, employee exits, and morale concerns in 2025.",
+          "发布日期": "2025/12/15 10:06",
+          "作者": "Jyoti Mann,Pranav Dixit"
+        },
+        "pairedItem": {
+          "item": 8
+        }
+      },
+      {
+        "json": {
+          "新闻链接": "https://www.businessinsider.com/sergey-brin-says-leaving-google-before-gemini-was-big-mistake-2025-12",
+          "标题": "Sergey Brin, who came back to Google to work on Gemini, says staying retired would have been a 'big mistake'",
+          "新闻简要": "Sergey Brin says the pandemic pushed him back into Google, where he's now helping drive its Gemini AI efforts.",
+          "发布日期": "2025/12/15 11:37",
+          "作者": "Thibault Spirlet"
+        },
+        "pairedItem": {
+          "item": 9
+        }
+      },
+      {
+        "json": {
+          "新闻链接": "https://it.slashdot.org/story/25/12/15/0013251/ceos-plan-to-spend-more-on-ai-in-2026---despite-spotty-returns",
+          "标题": "CEOS Plan to Spend More on AI in 2026 - Despite Spotty Returns",
+          "新闻简要": "The Wall Street Journal reports that 68% of CEOs \"plan to spend even more on AI in 2026, according to an annual survey of more than 350 public-company CEOs from advisory firm Teneo.\"\n\n\nAnd yet \"less than half of current AI projects had generated more in retur…",
+          "发布日期": "2025/12/15 00:17",
+          "作者": "EditorDavid"
+        },
+        "pairedItem": {
+          "item": 10
+        }
+      },
+      {
+        "json": {
+          "新闻链接": "https://www.semafor.com/article/12/14/2025/iterate-through-why-the-washington-post-launched-an-error-ridden-ai-product",
+          "标题": "'Iterate through': Why The Washington Post launched an error-ridden AI product",
+          "新闻简要": "Between 68% and 84% of AI-generated scripts failed the Post's own internal testing, but the paper launched the AI podcast feature anyway.",
+          "发布日期": "2025/12/15 02:00",
+          "作者": "Max Tani"
+        },
+        "pairedItem": {
+          "item": 11
+        }
+      },
+      {
+        "json": {
+          "新闻链接": "https://www.androidcentral.com/apps-software/ai/googles-upgraded-gemini-2-5-flash-native-audio-model-makes-ai-more-conversational",
+          "标题": "Google's upgraded Gemini 2.5 Flash Native Audio model makes AI more conversational",
+          "新闻简要": "Gemini's voice-assisted features are getting smoother conversations, better function calling, and complex instruction following with a model update.",
+          "发布日期": "2025/12/15 15:03",
+          "作者": "bradypsnyder@gmail.com (Brady Snyder) , Brady Snyder"
+        },
+        "pairedItem": {
+          "item": 12
+        }
+      },
+      {
+        "json": {
+          "新闻链接": "https://www.macrumors.com/2025/12/15/kindle-app-ios-gains-in-book-ai-chatbot/",
+          "标题": "Kindle App Now Includes AI Assistant for Character and Plot Questions",
+          "新闻简要": "Amazon has added a new feature to its Kindle app on iOS that uses artificial intelligence to answers questions about the book you're reading, the company has announced.\n\n\n\n\n\nAvailable in the U.S. only, \"Ask This Book\" is described as an \"expert reading assist…",
+          "发布日期": "2025/12/15 15:16",
+          "作者": "Tim Hardwick"
+        },
+        "pairedItem": {
+          "item": 13
+        }
+      },
+      {
+        "json": {
+          "新闻链接": "https://www.businessinsider.com/year-coding-changed-forever-silicon-valley-2025-12",
+          "标题": "The year coding changed forever",
+          "新闻简要": "Optimism, laziness, and magical thinking: The year vibe coding took over tech.",
+          "发布日期": "2025/12/15 09:11",
+          "作者": "Amanda Hoover"
+        },
+        "pairedItem": {
+          "item": 14
+        }
+      },
+      {
+        "json": {
+          "新闻链接": "https://finance.yahoo.com/news/intel-shares-rise-tech-strength-144257699.html",
+          "标题": "Intel shares rise on tech strength and acquisition talks",
+          "新闻简要": "Report says chipmaker is in advanced discussions to buy AI startup SambaNova.",
+          "发布日期": "2025/12/15 14:42",
+          "作者": "Faizan Farooque"
+        },
+        "pairedItem": {
+          "item": 15
+        }
+      },
+      {
+        "json": {
+          "新闻链接": "https://kotaku.com/snl-ai-slop-saturday-night-live-nbc-2000653399",
+          "标题": "This Week’s Saturday Night Live Was Drowning In Grim AI Slop",
+          "新闻简要": "People were quick to react in horror at the shortcuts and crappy images in the episode\nThe post This Week’s Saturday Night Live Was Drowning In Grim AI Slop appeared first on Kotaku.",
+          "发布日期": "2025/12/15 14:57",
+          "作者": "John Walker"
+        },
+        "pairedItem": {
+          "item": 16
+        }
+      },
+      {
+        "json": {
+          "新闻链接": "https://www.androidcentral.com/apps-software/google-gives-gemini-image-markup-tools-to-stop-the-app-from-guessing",
+          "标题": "Google gives Gemini image markup tools to stop the app from guessing",
+          "新闻简要": "You can finally make Gemini look where you point with new image markup tools.",
+          "发布日期": "2025/12/15 14:32",
+          "作者": "techkritiko@gmail.com (Jay Bonggolto) , Jay Bonggolto"
+        },
+        "pairedItem": {
+          "item": 17
+        }
+      },
+      {
+        "json": {
+          "新闻链接": "https://finance.yahoo.com/news/nvidia-unveils-open-source-ai-140424565.html",
+          "标题": "Nvidia unveils new open-source AI models amid boom in Chinese offerings",
+          "新闻简要": "Nvidia on Monday unveiled a new family of open-source artificial intelligence models that it says will be faster, cheaper and ​smarter than its previous...",
+          "发布日期": "2025/12/15 14:04",
+          "作者": "Reuters"
+        },
+        "pairedItem": {
+          "item": 18
+        }
+      },
+      {
+        "json": {
+          "新闻链接": "https://finance.yahoo.com/news/lead-microsoft-enterprise-ai-agent-140500171.html",
+          "标题": "I lead Microsoft’s enterprise AI agent strategy. Here’s what every company should know about how agents will rewrite work",
+          "新闻简要": "History shows that breakthrough technologies don’t just slot into existing systems, they make us rethink those systems entirely.",
+          "发布日期": "2025/12/15 14:05",
+          "作者": "Charles Lamanna"
+        },
+        "pairedItem": {
+          "item": 19
+        }
+      }
+    ],
+    "AI Agent": [
+      {
+        "json": {
+          "output": {
+            "新闻链接": "https://www.theverge.com/report/844454/musicians-tired-of-ai-clones",
+            "标题": "音乐人对这种AI克隆'狗屎'感到非常厌倦",
+            "新闻简要": "音乐人、制作人和行业内的其他人正在用'不理想'、'完全不可接受'、'无耻'、'掠夺性'、'一些狗屎'、'完全是狗屎'等词语来描述AI克隆的无情蔓延。当然，AI伪造品并不新鲜，但随着规模扩大...",
+            "发布日期": "2025/12/15 11:14",
+            "作者": "Terrence O'Brien"
+          }
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "output": {
+            "新闻链接": "https://www.theverge.com/cs/features/831818/ai-mercor-handshake-scale-surge-staffing-companies",
+            "标题": "喂养机器",
+            "新闻简要": "19岁时，布伦丹·福迪与两位高中好友共同创立了Mercor，旨在帮助他那些同样创办初创公司的朋友们在海外招聘软件工程师。该公司于2023年成立，本质上是一家人才中介机构，尽管高度自动化...",
+            "发布日期": "2025/12/15 12:02",
+            "作者": "Josh Dzieza, Hayden Field"
+          }
+        },
+        "pairedItem": {
+          "item": 1
+        }
+      },
+      {
+        "json": {
+          "output": {
+            "新闻链接": "https://gizmodo.com/asml-high-na-transition-2000699553",
+            "标题": "AI领域最大垄断者如何在2026年及以后保持其王座",
+            "新闻简要": "令人不安的是，全球经济如此依赖价值4亿美元的光刻机",
+            "发布日期": "2025/12/15 10:30",
+            "作者": "Mike Pearl"
+          }
+        },
+        "pairedItem": {
+          "item": 2
+        }
+      },
+      {
+        "json": {
+          "output": {
+            "新闻链接": "https://www.androidcentral.com/phones/samsung-galaxy/galaxy-s26-may-debut-with-software-features-hidden-in-one-ui-8-5",
+            "标题": "Galaxy S26可能搭载目前隐藏在One UI 8.5中的软件功能首次亮相",
+            "新闻简要": "泄露信息表明三星正在为Galaxy S26系列保留多项软件和AI功能",
+            "发布日期": "2025/12/15 13:53",
+            "作者": "sanujb6@gmail.com (Sanuj Bhatia) , Sanuj Bhatia"
+          }
+        },
+        "pairedItem": {
+          "item": 3
+        }
+      },
+      {
+        "json": {
+          "output": {
+            "新闻链接": "https://hbr.org/2025/12/corporate-disclosure-in-the-age-of-ai",
+            "标题": "人工智能时代的公司信息披露",
+            "新闻简要": "新工具使任何人都能从看似无害的信息中推断出战略洞察。",
+            "发布日期": "2025/12/15 15:00",
+            "作者": "Yi Cao, Long Chen"
+          }
+        },
+        "pairedItem": {
+          "item": 4
+        }
+      },
+      {
+        "json": {
+          "output": {
+            "新闻链接": "https://www.androidcentral.com/apps-software/disney-hits-google-with-a-cease-and-desist-over-ai-copyright-claims",
+            "标题": "迪士尼就AI版权问题向谷歌发出停止侵权函",
+            "新闻简要": "迪士尼刚刚起诉谷歌，称其AI是盗版米老鼠和艾莎等角色的'虚拟自动售货机'",
+            "发布日期": "2025/12/15 13:31",
+            "作者": "techkritiko@gmail.com (Jay Bonggolto) , Jay Bonggolto"
+          }
+        },
+        "pairedItem": {
+          "item": 5
+        }
+      },
+      {
+        "json": {
+          "output": {
+            "新闻链接": "https://www.androidcentral.com/apps-software/ai/googles-search-live-conversations-in-ai-mode-are-now-more-fluid-and-expressive",
+            "标题": "谷歌搜索AI模式的实时对话现在'更加流畅和富有表现力'",
+            "新闻简要": "谷歌AI模式现在支持更自然的声音，可以在直播时自定义语速快慢",
+            "发布日期": "2025/12/15 14:22",
+            "作者": "bradypsnyder@gmail.com (Brady Snyder) , Brady Snyder"
+          }
+        },
+        "pairedItem": {
+          "item": 6
+        }
+      },
+      {
+        "json": {
+          "output": {
+            "新闻链接": "https://www.businessinsider.com/ai-hiring-comeback-entry-level-jobs-ceo-teneo-survey-2025-12",
+            "标题": "AI正在悄然推动初级人才招聘复苏，上市公司CEO表示",
+            "新闻简要": "一项新调查显示，CEO们预计AI将在2026年推动招聘增长，特别是初级职位",
+            "发布日期": "2025/12/15 05:15",
+            "作者": "Lee Chong Ming"
+          }
+        },
+        "pairedItem": {
+          "item": 7
+        }
+      },
+      {
+        "json": {
+          "output": {
+            "新闻链接": "https://www.businessinsider.com/meta-ai-overhaul-mark-zuckerberg-year-intensity-2025-12",
+            "标题": "Meta的AI大变革、文化战争与整顿措施碰撞下的'强度之年'内幕",
+            "新闻简要": "Meta的AI大变革、文化转变、裁员和绩效整顿在2025年引发了内部冲突、员工离职和士气担忧",
+            "发布日期": "2025/12/15 10:06",
+            "作者": "Jyoti Mann,Pranav Dixit"
+          }
+        },
+        "pairedItem": {
+          "item": 8
+        }
+      },
+      {
+        "json": {
+          "output": {
+            "新闻链接": "https://www.businessinsider.com/sergey-brin-says-leaving-google-before-gemini-was-big-mistake-2025-12",
+            "标题": "谢尔盖·布林重返谷歌参与Gemini项目，称保持退休状态将是'重大错误'",
+            "新闻简要": "谢尔盖·布林表示，疫情促使他重返谷歌，目前他正在帮助推动该公司的Gemini人工智能项目发展。",
+            "发布日期": "2025/12/15 11:37",
+            "作者": "Thibault Spirlet"
+          }
+        },
+        "pairedItem": {
+          "item": 9
+        }
+      },
+      {
+        "json": {
+          "output": {
+            "新闻链接": "https://it.slashdot.org/story/25/12/15/0013251/ceos-plan-to-spend-more-on-ai-in-2026---despite-spotty-returns",
+            "标题": "CEO们计划在2026年增加AI支出 - 尽管回报参差不齐",
+            "新闻简要": "《华尔街日报》报道称，根据咨询公司Teneo对超过350家上市公司CEO进行的年度调查，68%的CEO\"计划在2026年增加AI支出\"。然而，\"目前不到一半的AI项目产生了更多的回报...\"",
+            "发布日期": "2025/12/15 00:17",
+            "作者": "EditorDavid"
+          }
+        },
+        "pairedItem": {
+          "item": 10
+        }
+      },
+      {
+        "json": {
+          "output": {
+            "新闻链接": "https://www.semafor.com/article/12/14/2025/iterate-through-why-the-washington-post-launched-an-error-ridden-ai-product",
+            "标题": "迭代前行：《华盛顿邮报》为何推出充满错误的AI产品",
+            "新闻简要": "尽管68%至84%的AI生成脚本未能通过《华盛顿邮报》的内部测试，但该报仍然推出了AI播客功能。",
+            "发布日期": "2025/12/15 02:00",
+            "作者": "Max Tani"
+          }
+        },
+        "pairedItem": {
+          "item": 11
+        }
+      },
+      {
+        "json": {
+          "output": {
+            "新闻链接": "https://www.androidcentral.com/apps-software/ai/googles-upgraded-gemini-2-5-flash-native-audio-model-makes-ai-more-conversational",
+            "标题": "谷歌升级的Gemini 2.5 Flash原生音频模型让AI更具对话性",
+            "新闻简要": "Gemini的语音辅助功能通过模型更新，实现了更流畅的对话、更好的函数调用和复杂指令跟随能力。",
+            "发布日期": "2025/12/15 15:03",
+            "作者": "bradypsnyder@gmail.com (Brady Snyder) , Brady Snyder"
+          }
+        },
+        "pairedItem": {
+          "item": 12
+        }
+      },
+      {
+        "json": {
+          "output": {
+            "新闻链接": "https://www.macrumors.com/2025/12/15/kindle-app-ios-gains-in-book-ai-chatbot/",
+            "标题": "Kindle应用现包含用于角色和情节问题的人工智能助手",
+            "新闻简要": "亚马逊公司宣布，已在其iOS版Kindle应用中添加了一项新功能，该功能使用人工智能来回答您正在阅读的书籍相关问题。目前仅在美国可用，'Ask This Book'被描述为'专家阅读助手...'",
+            "发布日期": "2025/12/15 15:16",
+            "作者": "Tim Hardwick"
+          }
+        },
+        "pairedItem": {
+          "item": 13
+        }
+      },
+      {
+        "json": {
+          "output": {
+            "新闻链接": "https://www.businessinsider.com/year-coding-changed-forever-silicon-valley-2025-12",
+            "标题": "编程永远改变的一年",
+            "新闻简要": "乐观、懒惰与魔法思维：氛围编程接管科技界的一年",
+            "发布日期": "2025/12/15 09:11",
+            "作者": "Amanda Hoover"
+          }
+        },
+        "pairedItem": {
+          "item": 14
+        }
+      },
+      {
+        "json": {
+          "output": {
+            "新闻链接": "https://finance.yahoo.com/news/intel-shares-rise-tech-strength-144257699.html",
+            "标题": "英特尔股价因技术实力和收购谈判而上涨",
+            "新闻简要": "据报道，这家芯片制造商正在就收购人工智能初创公司SambaNova进行深入谈判。",
+            "发布日期": "2025/12/15 14:42",
+            "作者": "Faizan Farooque"
+          }
+        },
+        "pairedItem": {
+          "item": 15
+        }
+      },
+      {
+        "json": {
+          "output": {
+            "新闻链接": "https://kotaku.com/snl-ai-slop-saturday-night-live-nbc-2000653399",
+            "标题": "本周《周六夜现场》深陷阴郁AI垃圾的泥潭",
+            "新闻简要": "观众迅速对剧集中的捷径和糟糕图像表示震惊",
+            "发布日期": "2025/12/15 14:57",
+            "作者": "John Walker"
+          }
+        },
+        "pairedItem": {
+          "item": 16
+        }
+      },
+      {
+        "json": {
+          "output": {
+            "新闻链接": "https://www.androidcentral.com/apps-software/google-gives-gemini-image-markup-tools-to-stop-the-app-from-guessing",
+            "标题": "谷歌为Gemini推出图像标记工具：防止应用猜测，让你可以指向特定位置",
+            "新闻简要": "谷歌为Gemini人工智能应用推出了新的图像标记工具，这些工具可以防止应用进行猜测，并让用户能够指向特定位置让Gemini查看。",
+            "发布日期": "2025/12/15 14:32",
+            "作者": "techkritiko@gmail.com (Jay Bonggolto) , Jay Bonggolto"
+          }
+        },
+        "pairedItem": {
+          "item": 17
+        }
+      },
+      {
+        "json": {
+          "output": {
+            "新闻链接": "https://finance.yahoo.com/news/nvidia-unveils-open-source-ai-140424565.html",
+            "标题": "英伟达在中国产品激增之际发布新的开源AI模型",
+            "新闻简要": "英伟达周一发布了一系列新的开源人工智能模型，该公司称这些模型将比其之前的模型更快、更便宜、更智能...",
+            "发布日期": "2025/12/15 14:04",
+            "作者": "Reuters"
+          }
+        },
+        "pairedItem": {
+          "item": 18
+        }
+      },
+      {
+        "json": {
+          "output": {
+            "新闻链接": "https://finance.yahoo.com/news/lead-microsoft-enterprise-ai-agent-140500171.html",
+            "标题": "我负责微软的企业AI代理战略。以下是每家公司都应该了解的关于代理将如何重塑工作的内容",
+            "新闻简要": "历史表明，突破性技术不仅仅是融入现有系统，它们让我们彻底重新思考这些系统",
+            "发布日期": "2025/12/15 14:05",
+            "作者": "Charles Lamanna"
+          }
+        },
+        "pairedItem": {
+          "item": 19
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Structured Output Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "Bitable:table:record:add bitable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "f79c0be8-379c-4dbb-8a61-fe4115c0b883",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4ec3133c8d628113a824c66a73c5bdda7b94b0762c5189e937dc7ec53c5a43ee"
+  },
+  "id": "UckdVJ7qgIyWEsOf",
+  "tags": []
+}

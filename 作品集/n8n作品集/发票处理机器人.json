@@ -1,0 +1,432 @@
+{
+  "name": "发票处理机器人",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## 收集发票图片    -->上传到图床中转     --> 调用大模型识别图片    -->将发票信息结构化      --> 存入飞书多维表格        -->美化发票格式    -->发送到邮箱",
+        "height": 80,
+        "width": 1808,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -752,
+        -496
+      ],
+      "typeVersion": 1,
+      "id": "c813c948-99c4-4899-9400-bcc0135882ee",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "# 发票处理机器人",
+        "height": 80,
+        "width": 1808,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -752,
+        -576
+      ],
+      "typeVersion": 1,
+      "id": "b59e9e2b-44e3-48b4-b997-c4ba9b5521d9",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "formTitle": "发票收集表单",
+        "formDescription": "发票信息",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "myImage",
+              "fieldType": "file",
+              "multipleFiles": false,
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "邮箱",
+              "fieldType": "email",
+              "defaultValue": "1703355328@qq.com"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.3,
+      "position": [
+        -752,
+        -336
+      ],
+      "id": "a57b229e-ca49-4c0e-86f1-d9f87d26f287",
+      "name": "On form submission",
+      "webhookId": "690dfa70-8047-41ad-8f2b-88cefc27ac46"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.imgbb.com/1/upload?expiration=6000&key=f74165cdec811bc63c123c33d3594072",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "image",
+              "inputDataFieldName": "myImage"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -544,
+        -336
+      ],
+      "id": "c8b7ecad-5b81-4da1-ba6e-ca398f6b419c",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.gpt.ge/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"gpt-4o\",\n  \"temperature\": 0,\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": [\n        {\n          \"type\": \"text\",\n          \"text\": \"你是一个“发票信息抽取器”。最关键规则：只根据票面中文标签来判定买卖方——当且仅当出现下列标签时进行映射：\\n- 购方/购买方/购货单位/购买单位/Buyer => buyer\\n- 销方/销售方/销售单位/卖方/开票单位/Seller => seller\\n严禁根据公司类型或主观判断猜测角色。如果看不到明确标签，则把对应一侧填 null，并在 meta.role_source 标注 unknown。输出必须为一个可被严格解析的 JSON 代码块（```json ... ```），不得有多余文本。\"\n        }\n      ]\n    },\n    {\n      \"role\": \"user\",\n      \"content\": [\n        {\n          \"type\": \"text\",\n          \"text\": \"请从这张发票图像中抽取结构化信息，字段与要求如下：\\n- 日期 YYYY-MM-DD；数值字段用数字类型；税率既给小数 tax_rate（如 0.01）也给 tax_rate_display（如 \\\"1%\\\"）。\\n- items 必须存在（没有就空数组）。\\n- buyer/seller 仅依据票面标签识别；若任一侧无明确标签，则该侧 name/tax_id 置 null。\\n- 同时输出 meta.role_source 取值：labels|heuristic|unknown（本任务只允许 labels 或 unknown）。\\n模式：只返回一个 JSON 代码块，不能有其他文字。\"\n        },\n        {\n          \"type\": \"image_url\",\n          \"image_url\": { \"url\": \"{{ $json.data.url }}\" }\n        },\n        {\n          \"type\": \"text\",\n          \"text\": \"Schema:\\n{\\n  \\\"invoice\\\": {\\n    \\\"title\\\": \\\"string|null\\\",\\n    \\\"number\\\": \\\"string|null\\\",\\n    \\\"issue_date\\\": \\\"YYYY-MM-DD|null\\\",\\n    \\\"currency\\\": \\\"string|null\\\",\\n    \\\"buyer\\\": {\\\"name\\\": \\\"string|null\\\", \\\"tax_id\\\": \\\"string|null\\\", \\\"note\\\": \\\"string|null\\\"},\\n    \\\"seller\\\": {\\\"name\\\": \\\"string|null\\\", \\\"tax_id\\\": \\\"string|null\\\"},\\n    \\\"items\\\": [{\\n      \\\"name\\\": \\\"string|null\\\", \\\"spec\\\": \\\"string|null\\\", \\\"unit\\\": \\\"string|null\\\",\\n      \\\"quantity\\\": \\\"number|null\\\", \\\"unit_price\\\": \\\"number|null\\\",\\n      \\\"amount_without_tax\\\": \\\"number|null\\\", \\\"tax_rate\\\": \\\"number|null\\\",\\n      \\\"tax_rate_display\\\": \\\"string|null\\\", \\\"tax_amount\\\": \\\"number|null\\\"\\n    }],\\n    \\\"totals\\\": {\\\"amount_without_tax\\\": \\\"number|null\\\", \\\"tax_total\\\": \\\"number|null\\\", \\\"amount_with_tax\\\": \\\"number|null\\\"},\\n    \\\"issuer\\\": \\\"string|null\\\",\\n    \\\"meta\\\": {\\\"role_source\\\": \\\"labels|unknown\\\"}\\n  }\\n}\"\n        }\n      ]\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -336,
+        -336
+      ],
+      "id": "4ad393a6-1f7b-4aff-942a-072229497adc",
+      "name": "HTTP Request1",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "5JNHikBWJRcYfnGM",
+          "name": "v-API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Code 节点 - 发票数据解析\n// 获取输入数据（处理可能的字符串格式）\nconst inputData = $input.first().json.choices[0].message.content;\n\n// 如果输入是字符串，先解析为 JSON\nlet invoiceData;\nif (typeof inputData === 'string') {\n  // 移除可能的 markdown 代码块标记\n  const cleanData = inputData.replace(/^```json\\s*/, '').replace(/\\s*```$/, '').trim();\n  invoiceData = JSON.parse(cleanData);\n} else {\n  invoiceData = inputData;\n}\n\n// 提取发票数据\nconst invoice = invoiceData.invoice;\n\n// 返回扁平化的 JSON 数据\nreturn [{\n  json: {\n    title: invoice.title,\n    invoiceNumber: invoice.number,\n    issueDate: invoice.issue_date,\n    currency: invoice.currency,\n    issuer: invoice.issuer,\n    buyerName: invoice.buyer.name,\n    buyerTaxId: invoice.buyer.tax_id,\n    buyerNote: invoice.buyer.note,\n    sellerName: invoice.seller.name,\n    sellerTaxId: invoice.seller.tax_id,\n    itemName: invoice.items[0].name,\n    itemSpec: invoice.items[0].spec,\n    itemUnit: invoice.items[0].unit,\n    quantity: invoice.items[0].quantity,\n    unitPrice: invoice.items[0].unit_price,\n    amountWithoutTax: invoice.items[0].amount_without_tax,\n    taxRate: invoice.items[0].tax_rate,\n    taxRateDisplay: invoice.items[0].tax_rate_display,\n    taxAmount: invoice.items[0].tax_amount,\n    subtotal: invoice.totals.amount_without_tax,\n    totalTax: invoice.totals.tax_total,\n    grandTotal: invoice.totals.amount_with_tax\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -128,
+        -336
+      ],
+      "id": "783f8c89-e0d3-4606-887b-3e7fa8fc7dff",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "resource": "bitable",
+        "operation": "bitable:table:record:add",
+        "app_toke": "X5jZb4jedawa0hscTgFcN75Mned",
+        "table_id": "tblqQaGdtn45APhN",
+        "body": "={\"fields\":\n  {\n  \"标题\":\"{{ $json.title }}\",\n  \"发票号\":\"{{ $json.invoiceNumber }}\",\n  \"发票日期\":\"{{ $json.issueDate }}\",\n\"销售方\":\"{{ $json.sellerName }}\",\n\"销售方税号\":\"{{ $json.sellerTaxId }}\",\n \"总金额\":{{ $json.amountWithoutTax }},\n \"税率\":\"{{ $json.taxRateDisplay }}\"\n}} "
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        80,
+        -336
+      ],
+      "id": "d1b68c7b-f22f-42c9-bdc6-fc18d29a6036",
+      "name": "Bitable:table:record:add bitable",
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "4lRfXH7rUnhGOUH0",
+          "name": "n8n应用1"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 设置输出为HTML格式\nconst invoiceData = $('Code in JavaScript').first().json\n\n// 创建HTML模板\nconst htmlContent = `\n<!DOCTYPE html>\n<html lang=\"zh-CN\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>发票详情 - ${invoiceData.title}</title>\n    <style>\n        * {\n            margin: 0;\n            padding: 0;\n            box-sizing: border-box;\n            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;\n        }\n        \n        body {\n            background-color: #f8f9fa;\n            padding: 20px;\n            color: #333;\n            line-height: 1.6;\n        }\n        \n        .invoice-container {\n            max-width: 800px;\n            margin: 0 auto;\n            background: white;\n            border-radius: 12px;\n            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);\n            overflow: hidden;\n        }\n        \n        .invoice-header {\n            background: linear-gradient(135deg, #1a73e8, #0d47a1);\n            color: white;\n            padding: 30px 40px;\n            text-align: center;\n        }\n        \n        .invoice-header h1 {\n            font-size: 28px;\n            font-weight: 600;\n            margin-bottom: 8px;\n            letter-spacing: 1px;\n        }\n        \n        .invoice-header .invoice-number {\n            font-size: 16px;\n            opacity: 0.9;\n            font-weight: 300;\n        }\n        \n        .invoice-body {\n            padding: 40px;\n        }\n        \n        .section-title {\n            font-size: 18px;\n            font-weight: 600;\n            color: #1a73e8;\n            margin-bottom: 20px;\n            padding-bottom: 10px;\n            border-bottom: 2px solid #e8f0fe;\n            display: flex;\n            align-items: center;\n        }\n        \n        .section-title i {\n            margin-right: 10px;\n            font-size: 20px;\n        }\n        \n        .info-grid {\n            display: grid;\n            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));\n            gap: 25px;\n            margin-bottom: 35px;\n        }\n        \n        .info-card {\n            background: #f8f9fa;\n            border-radius: 10px;\n            padding: 20px;\n            border-left: 4px solid #1a73e8;\n            transition: transform 0.2s, box-shadow 0.2s;\n        }\n        \n        .info-card:hover {\n            transform: translateY(-3px);\n            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);\n        }\n        \n        .info-label {\n            font-size: 14px;\n            color: #666;\n            margin-bottom: 8px;\n            font-weight: 500;\n        }\n        \n        .info-value {\n            font-size: 18px;\n            font-weight: 600;\n            color: #222;\n        }\n        \n        .highlight-card {\n            background: linear-gradient(135deg, #e8f0fe, #f1f8ff);\n            border-radius: 10px;\n            padding: 25px;\n            margin-top: 20px;\n            border: 1px solid #d2e3fc;\n        }\n        \n        .amount-display {\n            display: flex;\n            justify-content: space-between;\n            align-items: center;\n            margin-top: 10px;\n        }\n        \n        .amount-label {\n            font-size: 16px;\n            color: #555;\n        }\n        \n        .amount-value {\n            font-size: 24px;\n            font-weight: 700;\n            color: #1a73e8;\n        }\n        \n        .tax-info {\n            display: flex;\n            justify-content: space-between;\n            margin-top: 15px;\n            padding-top: 15px;\n            border-top: 1px dashed #ddd;\n        }\n        \n        .invoice-footer {\n            padding: 25px 40px;\n            background-color: #f8f9fa;\n            text-align: center;\n            color: #666;\n            font-size: 14px;\n            border-top: 1px solid #eee;\n        }\n        \n        .logo {\n            font-weight: 700;\n            color: #1a73e8;\n            font-size: 18px;\n            margin-bottom: 5px;\n        }\n        \n        /* 响应式设计 */\n        @media (max-width: 768px) {\n            .invoice-header, .invoice-body, .invoice-footer {\n                padding: 25px 20px;\n            }\n            \n            .info-grid {\n                grid-template-columns: 1fr;\n            }\n        }\n        \n        /* 打印样式 */\n        @media print {\n            body {\n                background: white;\n                padding: 0;\n            }\n            \n            .invoice-container {\n                box-shadow: none;\n                max-width: 100%;\n            }\n        }\n    </style>\n    <link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css\">\n</head>\n<body>\n    <div class=\"invoice-container\">\n        <div class=\"invoice-header\">\n            <h1>${invoiceData.title}</h1>\n            <div class=\"invoice-number\">发票号码: ${invoiceData.invoiceNumber}</div>\n        </div>\n        \n        <div class=\"invoice-body\">\n            <div class=\"section-title\">\n                <i class=\"fas fa-file-invoice\"></i> 发票基本信息\n            </div>\n            \n            <div class=\"info-grid\">\n                <div class=\"info-card\">\n                    <div class=\"info-label\">发票标题</div>\n                    <div class=\"info-value\">${invoiceData.title}</div>\n                </div>\n                \n                <div class=\"info-card\">\n                    <div class=\"info-label\">发票号码</div>\n                    <div class=\"info-value\">${invoiceData.invoiceNumber}</div>\n                </div>\n                \n                <div class=\"info-card\">\n                    <div class=\"info-label\">开票日期</div>\n                    <div class=\"info-value\">${invoiceData.issueDate}</div>\n                </div>\n                \n                <div class=\"info-card\">\n                    <div class=\"info-label\">开票人</div>\n                    <div class=\"info-value\">${invoiceData.issuer}</div>\n                </div>\n            </div>\n            \n            <div class=\"section-title\">\n                <i class=\"fas fa-building\"></i> 开票公司信息\n            </div>\n            \n            <div class=\"info-grid\">\n                <div class=\"info-card\">\n                    <div class=\"info-label\">开票公司</div>\n                    <div class=\"info-value\">${invoiceData.sellerName}</div>\n                </div>\n                \n                <div class=\"info-card\">\n                    <div class=\"info-label\">开票公司税号</div>\n                    <div class=\"info-value\">${invoiceData.sellerTaxId}</div>\n                </div>\n            </div>\n            \n            <div class=\"section-title\">\n                <i class=\"fas fa-shopping-cart\"></i> 消费信息\n            </div>\n            \n            <div class=\"highlight-card\">\n                <div class=\"info-label\">消费项目</div>\n                <div class=\"info-value\" style=\"margin-bottom: 20px;\">${invoiceData.itemName}</div>\n                \n                <div class=\"amount-display\">\n                    <div class=\"amount-label\">消费金额 (不含税)</div>\n                    <div class=\"amount-value\">¥${invoiceData.amountWithoutTax.toFixed(2)}</div>\n                </div>\n                \n                <div class=\"tax-info\">\n                    <div>\n                        <div class=\"info-label\">税率</div>\n                        <div class=\"info-value\">${invoiceData.taxRate * 100}%</div>\n                    </div>\n                    \n                    <div>\n                        <div class=\"info-label\">税额</div>\n                        <div class=\"info-value\">¥${invoiceData.taxAmount.toFixed(2)}</div>\n                    </div>\n                    \n                    <div>\n                        <div class=\"info-label\">价税合计</div>\n                        <div class=\"info-value\" style=\"color: #1a73e8;\">¥${invoiceData.grandTotal.toFixed(2)}</div>\n                    </div>\n                </div>\n            </div>\n        </div>\n        \n        <div class=\"invoice-footer\">\n            <div class=\"logo\">电子发票系统</div>\n            <div>本发票由系统自动生成，具有法律效力</div>\n            <div style=\"margin-top: 8px; font-size: 12px;\">生成时间: ${new Date().toLocaleString('zh-CN')}</div>\n        </div>\n    </div>\n</body>\n</html>\n`;\n\n// 返回HTML内容\nreturn [{ json: { htmlContent, ...invoiceData } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        288,
+        -336
+      ],
+      "id": "a6e4a6fd-0cb6-4fe8-a9fe-6125b106ed0d",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "fbfcd312-8694-4a51-a0c5-5805d5d2c299",
+              "leftValue": "={{ $('On form submission').item.json['邮箱'] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        496,
+        -336
+      ],
+      "id": "aea1a278-2bc2-42f7-8c21-544578a4d77a",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "fromEmail": "940443723@qq.com",
+        "toEmail": "1703355328@qq.com",
+        "subject": "发票信息",
+        "html": "={{ $('Code in JavaScript1').item.json.htmlContent }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        768,
+        -352
+      ],
+      "id": "2ece84e0-e368-47c2-ab25-a6a0f5a6c5a7",
+      "name": "Send email",
+      "webhookId": "198f3081-207b-4940-96bb-23089011615a",
+      "credentials": {
+        "smtp": {
+          "id": "JmOtxjjBqhPT218S",
+          "name": "qq邮箱授权"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "HTTP Request1": [
+      {
+        "json": {
+          "id": "chatcmpl-CqiKDGw0Bm9twH3gmpdBC3U9g4v3C",
+          "object": "chat.completion",
+          "created": 1766679477,
+          "model": "gpt-4o-2024-08-06",
+          "choices": [
+            {
+              "index": 0,
+              "message": {
+                "role": "assistant",
+                "content": "```json\n{\n  \"invoice\": {\n    \"title\": \"电子发票（普通发票）\",\n    \"number\": \"25327000000805260557\",\n    \"issue_date\": \"2025-07-15\",\n    \"currency\": null,\n    \"buyer\": {\n      \"name\": \"广东丰德科技有限公司\",\n      \"tax_id\": \"914400002331633294\",\n      \"note\": null\n    },\n    \"seller\": {\n      \"name\": \"苏州市吉利优行电子科技有限公司\",\n      \"tax_id\": \"91320594MA1MFD7F31\"\n    },\n    \"items\": [\n      {\n        \"name\": \"运输服务*客运服务费\",\n        \"spec\": null,\n        \"unit\": null,\n        \"quantity\": 1,\n        \"unit_price\": 82.320388,\n        \"amount_without_tax\": 82.32,\n        \"tax_rate\": 0.03,\n        \"tax_rate_display\": \"3%\",\n        \"tax_amount\": 2.47\n      },\n      {\n        \"name\": \"运输服务*客运服务费\",\n        \"spec\": null,\n        \"unit\": null,\n        \"quantity\": 1,\n        \"unit_price\": null,\n        \"amount_without_tax\": -21.98,\n        \"tax_rate\": 0.03,\n        \"tax_rate_display\": \"3%\",\n        \"tax_amount\": -0.66\n      }\n    ],\n    \"totals\": {\n      \"amount_without_tax\": 60.34,\n      \"tax_total\": 1.81,\n      \"amount_with_tax\": 62.15\n    },\n    \"issuer\": \"钟寒冰\",\n    \"meta\": {\n      \"role_source\": \"labels\"\n    }\n  }\n}\n```",
+                "refusal": null,
+                "annotations": []
+              },
+              "logprobs": null,
+              "finish_reason": "stop"
+            }
+          ],
+          "usage": {
+            "prompt_tokens": 1622,
+            "completion_tokens": 377,
+            "total_tokens": 1999,
+            "prompt_tokens_details": {
+              "cached_tokens": 0,
+              "audio_tokens": 0
+            },
+            "completion_tokens_details": {
+              "reasoning_tokens": 0,
+              "audio_tokens": 0,
+              "accepted_prediction_tokens": 0,
+              "rejected_prediction_tokens": 0
+            }
+          },
+          "system_fingerprint": "fp_4a331a0222"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "HTTP Request": [
+      {
+        "json": {
+          "data": {
+            "id": "CKqyXPs8",
+            "title": "发票",
+            "url_viewer": "https://ibb.co/CKqyXPs8",
+            "url": "https://i.ibb.co/7tHDTkNC/image.png",
+            "display_url": "https://i.ibb.co/DfNF6rgW/image.png",
+            "width": 1614,
+            "height": 1088,
+            "size": 470020,
+            "time": 1766676054,
+            "expiration": 6000,
+            "image": {
+              "filename": "image.png",
+              "name": "image",
+              "mime": "image/png",
+              "extension": "png",
+              "url": "https://i.ibb.co/7tHDTkNC/image.png"
+            },
+            "thumb": {
+              "filename": "image.png",
+              "name": "image",
+              "mime": "image/png",
+              "extension": "png",
+              "url": "https://i.ibb.co/CKqyXPs8/image.png"
+            },
+            "medium": {
+              "filename": "image.png",
+              "name": "image",
+              "mime": "image/png",
+              "extension": "png",
+              "url": "https://i.ibb.co/DfNF6rgW/image.png"
+            },
+            "delete_url": "https://ibb.co/CKqyXPs8/3532a016c050a1046187d39e2786b13d"
+          },
+          "success": true,
+          "status": 200
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "Bitable:table:record:add bitable": [
+      {
+        "json": {
+          "code": 0,
+          "data": {
+            "record": {
+              "fields": {
+                "发票号": "25327000000805260557",
+                "发票日期": "2025-07-15",
+                "总金额": 82.32,
+                "标题": "电子发票（普通发票）",
+                "税率": "3%",
+                "销售方": "苏州市吉利优行电子科技有限公司",
+                "销售方税号": "91320594MA1MFD7F31"
+              },
+              "id": "recv6pq7Ctbf6X",
+              "record_id": "recv6pq7Ctbf6X"
+            }
+          },
+          "msg": "success"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Bitable:table:record:add bitable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Bitable:table:record:add bitable": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "06301b24-cc0b-4af9-9d08-604b23e110a6",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4ec3133c8d628113a824c66a73c5bdda7b94b0762c5189e937dc7ec53c5a43ee"
+  },
+  "id": "UTSeoFR1pp1z2RlH",
+  "tags": []
+}

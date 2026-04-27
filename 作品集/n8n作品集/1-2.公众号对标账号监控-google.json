@@ -1,0 +1,602 @@
+{
+  "name": "实战12-2.公众号对标账号监控-google",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 22
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -704,
+        -256
+      ],
+      "id": "447c43b6-d13d-4874-9ecc-f631a7d69fd9",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "4a86878e-8b38-46fb-9ebe-d2af20c4640b",
+              "leftValue": "={{ $json.msg }}",
+              "rightValue": "当天没有发文!",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        384,
+        -256
+      ],
+      "id": "9953c8de-a2ee-47b1-b9ae-82aa1259e156",
+      "name": "Filter1"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        688,
+        -256
+      ],
+      "id": "b68a8d7c-8bb7-4c53-9e9d-5c27689008e1",
+      "name": "Split Out1"
+    },
+    {
+      "parameters": {
+        "html": "={{ $json.content }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.markdown",
+      "typeVersion": 1,
+      "position": [
+        -304,
+        48
+      ],
+      "id": "a1a40778-0ef2-497b-b51d-5e7016c77c1a",
+      "name": "Markdown"
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Code 节点，语言选 JavaScript\n\nfunction cleanMarkdown(markdown) {\n  if (typeof markdown !== 'string') return '';\n\n  let result = markdown;\n\n  // 1. 图片：![alt](url)\n  result = result.replace(/!\\[[^\\]]*?\\]\\([^)]*?\\)/g, '');\n\n  // 2. 普通链接：保留文字 [text](url) -> text\n  result = result.replace(/\\[([^\\]]*?)\\]\\([^)]*?\\)/g, '$1');\n\n  // 3. 自动 / 裸链接：<https://xx> 或 https://xx 直接去掉\n  result = result.replace(/<https?:\\/\\/[^>]+>/gi, '');\n  result = result.replace(/https?:\\/\\/\\S+/gi, '');\n\n  // 4. 清理多余空格和空行\n  result = result\n    .replace(/[ \\t]+\\n/g, '\\n')   // 行尾空格\n    .replace(/\\n{3,}/g, '\\n\\n');  // 多个空行压成两个\n\n  return result.trim();\n}\n\n// 处理所有输入 items\nconst items = $input.all().map(item => {\n  const md = item.json.data || '';     // 你的 markdown 文本字段，如果是 data.content 就改成 item.json.data.content\n  const cleaned = cleanMarkdown(md);\n\n  // 你可以覆盖原字段，也可以写到新字段：\n  item.json.cleanedData = cleaned;     // 新字段\n  // item.json.data = cleaned;         // 若想直接覆盖原来的 data，用这一行替换上面一行\n\n  return item;\n});\n\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -16,
+        48
+      ],
+      "id": "48fd715d-74e5-4cb0-a274-68bd68102bfb",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=标题：{{ $json.title }}\n账号：{{ $json.nickname }}\n时间：{{ $json.post_time_str }}\n内容：{{ $json.cleanedData }}",
+        "options": {
+          "systemMessage": "你现在是一名资深的公众号选题拆解分析师，擅长从单篇文章中快速提炼选题逻辑。\n\n系统会提供给你以下信息（可能不完全，但会尽量包含）：\n\n文章标题\n\n公众号名称\n\n发布日期\n\n文章正文内容或摘要（可能是截取的一部分）\n\n如果有：阅读量、点赞数、在看数等基础数据\n\n你的任务是：\n在不复读原文的前提下，用尽量精炼的语言，拆解这一篇文章的选题，并按照下面的固定文本格式输出。\n\n要求：\n\n输出必须是纯文本，不要使用任何 JSON、HTML、Markdown 语法。\n\n严格保留每一行的字段名和顺序，只替换冒号后面的内容。\n\n如果信息缺失，就用“未知”或“未提供”简要填充，不要省略字段。\n\n请按照以下模板输出（不要增加或删减行）：\n\n核心主题： （这篇文章围绕什么具体话题或问题展开？尽量具体到一个场景或问题）\n目标人群： （这篇文章主要写给谁看？职业/阶段/处境）\n\n选题类型： （如：实用教程 / 经验复盘 / 故事案例 / 观点评论 / 清单合集 / 行业观察 等）\n内容结构： （用 1 句话概括文章大致结构，例如：问题—原因—方法—案例—总结）\n\n四选法则定位：\n\n你最深（专业/经验）：（作者展示了哪些专业知识或独特经验？如果没有就写“弱”或“几乎没有”）\n\n情绪触点：（主要利用了哪些情绪？如焦虑、恐惧、愧疚、爽感、希望、安全感等）\n\n热点事件：（是否绑定了某个社会/行业/平台/节日热点？如有请写出名称和关联方式）\n\n痛点需求：（文章试图解决读者什么具体痛点？时间/金钱/能力/关系/情绪中的哪一类？）\n\n标题策略： （标题用了哪些技巧？如数字、对比、悬念、“如果你还…就…” 等）\n关键词： （从标题和正文里提炼 3–7 个高频或关键关键词，用顿号分隔）\n\n优势亮点： （从选题角度，这篇文章最值得学习的 1–3 个点）\n主要不足： （从选题或切题角度看，有哪些可改进之处？）\n\n一句话选题总结： （用 1 句简洁的话概括：这是一篇「面向谁」的「解决什么问题」的文章）\n\n请直接输出以上模板填好的内容，不要添加任何额外说明或点评"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        336,
+        48
+      ],
+      "id": "84de4475-624d-448b-abba-3d228c63e33e",
+      "name": "AI选题分析"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "14o3S1xRCvGotZwU48Fp0C8JGpE5SIFsau7r2xfpD1Ck",
+          "mode": "list",
+          "cachedResultName": "自媒体选题库",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14o3S1xRCvGotZwU48Fp0C8JGpE5SIFsau7r2xfpD1Ck/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 650777059,
+          "mode": "list",
+          "cachedResultName": "对标账号监控",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14o3S1xRCvGotZwU48Fp0C8JGpE5SIFsau7r2xfpD1Ck/edit#gid=650777059"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "是否对标",
+              "lookupValue": "是"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -464,
+        -256
+      ],
+      "id": "e84da177-73d7-4166-af5c-e0e8531045f7",
+      "name": "读取对标账号",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "dxI5BRk9GOM26ffW",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.dajiala.com/fbmain/monitor/v3/post_condition",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "name",
+              "value": "={{ $json['公众号名称'] }}"
+            },
+            {
+              "name": "key",
+              "value": "=  {{ $json['极致了apikey'] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        32,
+        -256
+      ],
+      "id": "cbcfb82d-6573-4692-bae9-a82863e988e8",
+      "name": "读取对标文章列表"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.dajiala.com/fbmain/monitor/v3/article_detail",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "mode",
+              "value": "2"
+            },
+            {
+              "name": "url",
+              "value": "={{ $json.url }}"
+            },
+            {
+              "name": "key",
+              "value": "={{ $('极致了apikey').item.json['极致了apikey'] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -672,
+        48
+      ],
+      "id": "fb9cc4fd-e10f-4f7a-80db-3bcea81bf1a5",
+      "name": "获取文章详情"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        336,
+        240
+      ],
+      "id": "390ee1be-4401-439c-9de6-185e4957de6f",
+      "name": "DeepSeek Chat Model",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "w2l1BwFih5cyUWGb",
+          "name": "DeepSeek account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "14o3S1xRCvGotZwU48Fp0C8JGpE5SIFsau7r2xfpD1Ck",
+          "mode": "list",
+          "cachedResultName": "自媒体选题库",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14o3S1xRCvGotZwU48Fp0C8JGpE5SIFsau7r2xfpD1Ck/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "公众号选题",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14o3S1xRCvGotZwU48Fp0C8JGpE5SIFsau7r2xfpD1Ck/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "日期": "={{ $('Split Out1').item.json.post_time_str }}",
+            "对标信息": "={{ $('Split Out1').item.json.url }}",
+            "文章分析": "={{ $json.output }}",
+            "来源": "机器",
+            " 状态": "待审核",
+            "文章原文": "={{ $('获取文章详情').item.json.content }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "日期",
+              "displayName": "日期",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "对标信息",
+              "displayName": "对标信息",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "文章分析",
+              "displayName": "文章分析",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "文章定位",
+              "displayName": "文章定位",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "参考信息",
+              "displayName": "参考信息",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "来源",
+              "displayName": "来源",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": " 状态",
+              "displayName": " 状态",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "文章原文",
+              "displayName": "文章原文",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        688,
+        48
+      ],
+      "id": "8080bedb-51c6-4b9e-9bb1-2eb5a4918849",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "dxI5BRk9GOM26ffW",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7b694e05-00ab-4d4e-bc26-76332640b7ab",
+              "name": "极致了apikey",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -240,
+        -256
+      ],
+      "id": "51b9f23a-a109-4e0a-9c16-2ba9300570b9",
+      "name": "极致了apikey"
+    }
+  ],
+  "pinData": {
+    "读取对标文章列表": [
+      {
+        "json": {
+          "code": 0,
+          "msg": "success!",
+          "data": [
+            {
+              "position": 1,
+              "url": "https://mp.weixin.qq.com/s/1QTGmjECBWyh2o3O34XlCQ",
+              "post_time": 1767335232,
+              "post_time_str": "2026-01-02 14:27:12",
+              "cover_url": "https://mmbiz.qpic.cn/sz_mmbiz_jpg/uS1lIUwStspzNVEqQqTBrwHHjNaXXUDN45XCTJicSDOO8yWRjTYStWGxgssR4ZzsHFGgRbZuqxicDB7yALBfbfZA/0?wx_fmt=jpeg",
+              "original": 1,
+              "item_show_type": 0,
+              "digest": "",
+              "title": "2026年：拒绝平庸",
+              "pre_post_time": 1767335230,
+              "appmsgid": 2650813234,
+              "msg_status": 2,
+              "msg_fail_reason": "",
+              "send_to_fans_num": 28173,
+              "update_time": 1767335353,
+              "is_deleted": "0",
+              "types": 9,
+              "pic_cdn_url_235_1": "https://mmbiz.qpic.cn/sz_mmbiz_jpg/uS1lIUwStspzNVEqQqTBrwHHjNaXXUDNNiclSSv0ChkgsLmIRqib0zOEibExL9JibSWCZ7tWpcfoavcFVuO19yWvwg/0?wx_fmt=jpeg",
+              "pic_cdn_url_16_9": "",
+              "pic_cdn_url_1_1": "https://mmbiz.qpic.cn/sz_mmbiz_jpg/uS1lIUwStspzNVEqQqTBrwHHjNaXXUDN45XCTJicSDOO8yWRjTYStWGxgssR4ZzsHFGgRbZuqxicDB7yALBfbfZA/0?wx_fmt=jpeg"
+            }
+          ],
+          "extra": false,
+          "mp_nickname": "块块投资笔记",
+          "mp_wxid": "gwjlb178",
+          "mp_ghid": "gh_a2acd55e809b",
+          "head_img": "http://mmbiz.qpic.cn/sz_mmbiz_png/uS1lIUwStso47K1ZvsqibibP0nC505lHgvwtXibDqiaPia3uUSRiaqEjzFVg9qy7amtppU2IicWNc9EibI5pAiaJfOs2vng/0?wx_fmt=png",
+          "now_page": 1,
+          "now_page_articles_num": 1,
+          "cost_money": 0.08,
+          "remain_money": 0.24
+        }
+      }
+    ],
+    "获取文章详情": [
+      {
+        "json": {
+          "code": 0,
+          "cost_money": 0.045,
+          "remain_money": 0.195,
+          "title": "2026年：拒绝平庸",
+          "article_url": "https://mp.weixin.qq.com/s?__biz=MzI4NTA2NDg4Mg==&mid=2650813234&idx=1&sn=ad9739c3b380d92418634def531a939c#rd",
+          "mp_head_img": "http://mmbiz.qpic.cn/sz_mmbiz_png/uS1lIUwStso47K1ZvsqibibP0nC505lHgvwtXibDqiaPia3uUSRiaqEjzFVg9qy7amtppU2IicWNc9EibI5pAiaJfOs2vng/0?wx_fmt=png",
+          "cover_url": "https://mmbiz.qpic.cn/sz_mmbiz_jpg/uS1lIUwStspzNVEqQqTBrwHHjNaXXUDNNiclSSv0ChkgsLmIRqib0zOEibExL9JibSWCZ7tWpcfoavcFVuO19yWvwg/0?wx_fmt=jpeg",
+          "picture_page_info_list": [
+            {
+              "cdn_url": "https://res.wx.qq.com/t/wx_fed/we-emoji/res/assets/Expression/Expression_42@2x.png",
+              "width": 128,
+              "height": 128
+            },
+            {
+              "cdn_url": "https://res.wx.qq.com/t/wx_fed/we-emoji/res/assets/newemoji/Social.png",
+              "width": 128,
+              "height": 128
+            },
+            {
+              "cdn_url": "https://res.wx.qq.com/t/wx_fed/we-emoji/res/assets/Expression/Expression_64@2x.png",
+              "width": 128,
+              "height": 128
+            }
+          ],
+          "nickname": "块块投资笔记",
+          "post_time": 1767335252,
+          "post_time_str": "2026-01-02 14:27:32",
+          "gh_id": "gh_a2acd55e809b",
+          "wxid": "gh_a2acd55e809b",
+          "source_url": "",
+          "signature": "别来无恙，我是墨将军",
+          "author": "嘿 军军",
+          "desc": "",
+          "copyright": 1,
+          "content": "<!DOCTYPE html>\n<html xmlns=\"http://www.w3.org/1999/xhtml\" class=\"view\" >\n\n<head>\n    <meta name=\"referrer\" content=\"never\">\n    <meta charset=\"utf-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    \n<title>2026年：拒绝平庸</title>\n\n            <style type=\"text/css\">\n\timg{\n\tdisplay:block;\n\tmargin:0 auto !important;\n\twidth:100%;\n\t}\n\tbody{\n\t\twidth:75%;\n\t\tmargin:0 auto !important;\n\t}\n</style>\n</head>\n<body>\n\n        <h1><a style=\"text-decoration:none;color:#4c4c4c\" href=\"https://mp.weixin.qq.com/s?__biz=MzI4NTA2NDg4Mg==&mid=2650813234&idx=1&sn=ad9739c3b380d92418634def531a939c#rd\">2026年：拒绝平庸</a></h1>\n        <h4 style=\"color:#999\">嘿 军军&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;块块投资笔记&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2026-01-02 14:27:32</h4>\n        <p data-path-to-node=\"3\" data-pm-slice=\"0 0 []\"><span leaf=\"\">又到了每年的惯例复盘时刻。</span></p><p data-path-to-node=\"3\" data-pm-slice=\"0 0 []\"><span leaf=\"\">我有一种反直觉的体感，以往总觉得光阴似箭，但2025年却显得格外绵长且饱满。这源于我生命中两个正在生长的幼苗：两岁半的女儿，和刚满周岁的犀牛财富俱乐部。它们都处于最需要耐心与滋养的阶段，吸纳了我大量的时间与心力。</span></p><p data-path-to-node=\"4\"><span leaf=\"\">无论是陪着孩子在夕阳下骑车散步、听她天真烂漫的童言趣语，还是为了俱乐部打磨每一个课件、回应每一个伙伴的真切痛点，看着我们的认知体系像拼图般一块块完整。这种微小而持续的迭代，给了我巨大的确定性。这才是真正的充实，一种细颗粒度的、持续向上的力量感。</span></p><p data-path-to-node=\"4\"><span leaf=\"\">挥别2025，感谢这一年赋予我生命前所未有的密度和深意。</span></p><section><span leaf=\"\"><br  /></span></section><p><span leaf=\"\"><span textstyle=\"\" style=\"font-weight: bold;\">1，2025年收益还不错，很大程度上要归功于我们都坐在了周期的电梯上。</span></span></p><p><span leaf=\"\">风起来的时候，谁都能飞两圈，但同时清醒意识到，这并不代表是我们能力有多出众。超额收益很依赖市场大环境，因此在自己历史过往投资成绩中，有坏的当然就有好的，我始终保持着平常心，因为我很清楚，市场给的Beta收益往往是最昂贵的诱饵，它让你产生一种无所不能的幻觉，然后在下一个转角连本带利地收割回去。</span></p><p><span leaf=\"\"><span textstyle=\"\" style=\"font-weight: bold;\">2，在充满噪音和幸存者偏差的投资世界里</span>，清醒是比本金更重要的资产。这一年我继续“双曲线”的人生策略。</span></p><p><span leaf=\"\"><span textstyle=\"\" style=\"font-weight: bold;\">一条曲线是资本复利</span>，靠的是对周期的敬畏和资产配置的耐力；<span textstyle=\"\" style=\"font-weight: bold;\">另一条曲线是个体IP的进化</span>，靠的是对世界的极度好奇和生命体验维度的疯狂拓展。我坚定认为，只有当认知和体验足够丰富，才能在不确定的未来里，构建出真正抗脆弱性的思维系统。</span></p><p><span leaf=\"\"><span textstyle=\"\" style=\"font-weight: bold;\">3，为了能在极速奔跑的时代不被甩下车，2025年努力学习AI。</span></span></p><p><span leaf=\"\">也快一年了，这过程给我的反馈是，它不仅仅是学习几个工具应用那么简单，本质上是在给自己加杠杆。</span></p><p><span leaf=\"\">以前我们讲杠杆，更多是指资金层面，但在今天，将自己的思考模块化、沉淀下来，再利用AI将其无限分发和重组，这是最高级的认知杠杆。</span></p><p><span leaf=\"\">在这种场景下，我认为读书尤为重要，因为认知的对错高低全部取决自己的认知水平，</span><span leaf=\"\" data-pm-slice=\"1 1 [&quot;para&quot;,{&quot;tagName&quot;:&quot;p&quot;,&quot;attributes&quot;:{},&quot;namespaceURI&quot;:&quot;http://www.w3.org/1999/xhtml&quot;}]\">在信息泛滥+短视频的冲击年代，</span><span leaf=\"\">读书，读完整的书，读好书是提升底层思维中特别重要的一项能力！其次如果精力和经济允许，和人去交流，交流中的思想碰撞也极有收获！</span></p><p><span leaf=\"\">2025年在俱乐部尝试做了几期共读计划，遗憾的是，我这方面也没啥经验，也没有特意去学习其他社群怎么做的共读，两三个月后不了了之，2026年还是想尝试共读~</span></p><p><span leaf=\"\">12月底搭好n8n自动化工作流后，这个潘多拉盒子被不断打开后再也回不去了，未来的竞争中，好好利用AI，让自己的时间价值呈现指数级的爆发。这种能力的习得，比学着去抓这几个涨停板要让我踏实。</span></p><p><span leaf=\"\"><br  /></span></p><p><span leaf=\"\"><span textstyle=\"\" style=\"font-size: 20px;font-weight: bold;\">2026年投资和个人计划：</span></span></p><p><span leaf=\"\"><span textstyle=\"\" style=\"font-size: 20px;color: rgb(255, 76, 65);font-weight: bold;\">1，投资方面</span></span></p><p><span leaf=\"\">我在<a class=\"normal_text_link\" target=\"_blank\" style=\"\" href=\"https://mp.weixin.qq.com/s?__biz=MzI4NTA2NDg4Mg==&amp;mid=2650813206&amp;idx=1&amp;sn=85e7d00ccc0f92750eefaf02cb94916e&amp;scene=21#wechat_redirect\" textvalue=\"2026年，继续看好硬科技！\" data-itemshowtype=\"0\" linktype=\"text\" data-linktype=\"2\">2026年，继续看好硬科技！</a>这一篇里面其实已经写了，这属于是事件驱动的主题投资，并不会三天两头跌了涨了就会更换方向，2026年上半年会坚守该主题。</span></p><p><span leaf=\"\">2025年指数虽然大涨，但繁荣之下埋藏着很多毁灭，如果是9月去追港股创新药，10月去追恒生科技，900多去追了摩尔线程...都会是另一番结果！</span></p><p><span leaf=\"\"><span textstyle=\"\" style=\"font-weight: bold;\">2026年继续保持核心仓的宽基+卫星仓的科技配置，维持重仓！拒绝平庸的投资路径，账户一端做好稳稳的保护，另一端尽可能去追逐新科技！</span></span></p><p><span leaf=\"\">看好行情守好自己的组合，有句老生常谈的话，牛市会放大人的贪婪和盲目自信，比熊市更容易亏钱！</span></p><p><span leaf=\"\"><span textstyle=\"\" style=\"font-size: 20px;color: rgb(255, 76, 65);font-weight: bold;\">2，个人IP</span></span></p><p data-path-to-node=\"4\" data-pm-slice=\"0 0 []\"><span leaf=\"\"><span textstyle=\"\" style=\"font-weight: bold;\">坦白说，</span></span><span leaf=\"\" data-pm-slice=\"1 1 [&quot;para&quot;,{&quot;tagName&quot;:&quot;p&quot;,&quot;attributes&quot;:{&quot;data-path-to-node&quot;:&quot;4&quot;,&quot;data-pm-slice&quot;:&quot;0 0 []&quot;},&quot;namespaceURI&quot;:&quot;http://www.w3.org/1999/xhtml&quot;}]\"><span textstyle=\"\" style=\"font-weight: bold;\">在个人IP的探索上</span></span><span leaf=\"\"><span textstyle=\"\" style=\"font-weight: bold;\">多少有些偶像包袱，也有很多纠结和拍脑袋的盲目；</span>想的太多会阻碍行为，年中曾想把公众号写文尽可能往写书靠拢，这反而阻碍了我的自由写文，搞了个笼子把自己给套住了<img src=\"https://res.wx.qq.com/t/wx_fed/we-emoji/res/assets/Expression/Expression_42@2x.png\" class=\"rich_pages wxw-img\" data-ratio=\"1\" data-w=\"20\" style=\"display:inline-block;width:20px;vertical-align:middle;background-size:cover;\" data-aistatus=\"1\"  />然后日常输出中想维持自以为的得体和完美形象，会无意识修剪掉思维中那些尖锐甚至偏激的棱角，戴上了一副迎合大众审美的温和面具。但这些都不是完全真实的我。</span></p><p data-path-to-node=\"4\" data-pm-slice=\"0 0 []\"><span leaf=\"\">我对很多价值观有着天然的生理性厌恶。</span></p><p data-path-to-node=\"4\" data-pm-slice=\"0 0 []\"><span leaf=\"\">虽然从小教育告诉我谦虚是美德，让我习惯性压制内心那股若隐若现的傲气和讨厌，生怕刺伤了谁，在很难忍受的时候，也会不断告诉自己要包容，存在即合理，尊重个体的多样性...巴拉巴拉...大概这种矛盾、高傲又追求极致成长的复杂性，才是真实的我。</span></p><p data-path-to-node=\"5\"><span leaf=\"\">今年我决定把这些伪装彻底剥离。更坦荡，更大胆去输出那些直抵本质的观点，哪怕它会冒犯一部分人。不再执着于屏幕那端的点赞或反感，我只忠诚自己内心的认可和热爱。</span></p><p><span leaf=\"\">做一匹脱缰的黑马。</span></p><p><span leaf=\"\">在投资决策上更加独立独行，拒绝被主流叙事裹挟，在精神内核上彻底释放。</span></p><p><span leaf=\"\">也许在充满不确定性的世界里，只有极致的真实和绝对的清醒，才能让我们穿越迷雾。我们不需要成为谁的榜样，只需要对自己渴望自由的灵魂和野心负责。</span></p><p><span leaf=\"\">既然已经在路上，就别再回头看那些虚无的掌声，前方的旷野才是我们该去的地方。</span></p><p><span leaf=\"\">诸位2026年元旦快乐<img src=\"https://res.wx.qq.com/t/wx_fed/we-emoji/res/assets/newemoji/Social.png\" class=\"rich_pages wxw-img\" data-ratio=\"1\" data-w=\"20\" style=\"display:inline-block;width:20px;vertical-align:middle;background-size:cover;\" data-aistatus=\"1\"  /><img src=\"https://res.wx.qq.com/t/wx_fed/we-emoji/res/assets/Expression/Expression_64@2x.png\" class=\"rich_pages wxw-img\" data-ratio=\"1\" data-w=\"20\" style=\"display:inline-block;width:20px;vertical-align:middle;background-size:cover;\" data-aistatus=\"1\"  />顺顺利利，红红火火</span></p><section><span leaf=\"\"><br  /></span></section><p style=\"display: none;\"><mp-style-type data-value=\"3\"></mp-style-type></p>\n        </body>\n        </html>\n"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "读取对标账号",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter1": {
+      "main": [
+        [
+          {
+            "node": "Split Out1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out1": {
+      "main": [
+        [
+          {
+            "node": "获取文章详情",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Markdown": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "AI选题分析",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI选题分析": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "读取对标账号": {
+      "main": [
+        [
+          {
+            "node": "极致了apikey",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "读取对标文章列表": {
+      "main": [
+        [
+          {
+            "node": "Filter1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "获取文章详情": {
+      "main": [
+        [
+          {
+            "node": "Markdown",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI选题分析",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "极致了apikey": {
+      "main": [
+        [
+          {
+            "node": "读取对标文章列表",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "df98e43b-b004-4b0b-b94a-565a097f506a",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4ec3133c8d628113a824c66a73c5bdda7b94b0762c5189e937dc7ec53c5a43ee"
+  },
+  "id": "I7tfUt1EPMcUrlb4",
+  "tags": []
+}

@@ -1,0 +1,2131 @@
+{
+  "name": "实战12-3.公众号文章二创-google",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=请对以下内容进行总结：\n{{ $json['原文'] }}",
+        "options": {
+          "systemMessage": "=# 角色\n你是一位专业的深度内容分析师。\n\n# 背景\n你将收到一份由极致了数据工具从微信公众号文章中提取的HTML原文。这份原文的开头和结尾可能包含作者信息、日期、以及“点赞”、“在看”、“赞赏”等与正文无关的干扰信息。\n\n# 核心任务\n你的核心任务是：忽略所有干扰信息，仅针对文章正文，进行精准的梳理与提炼。\n\n# 输出要求\n1.  **内容甄别**：在分析前，必须首先识别并忽略文章开头和结尾的所有非正文内容（如作者、日期、封面图标记、文末的“点赞”、“在看”、“感谢支持”、“赞赏”等互动性文字）。\n2.  **核心摘要**：用简洁、客观的语言，梳理并概括文章的核心论点、主要事实和情感脉络。确保读者能快速理解原文的核心思想。\n3.  **金句提炼**：从正文中摘录3-5句你认为最鞭辟入里、最具启发性的句子。仅需原文引用，无需添加任何解读或评论。\n4.  **字数控制**：摘要与金句的合计总字数，严格控制在500字以内。\n5.  **格式化输出**：请严格按照以下格式输出，以确保内容清晰：\n\n### 核心内容摘要\n\n【这里是你的摘要内容】\n\n### 文中金句\n\n- 【金句一】\n- 【金句二】\n- 【金句三】"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        528,
+        112
+      ],
+      "id": "9bcac479-1070-4803-bd9f-a2c228a3522f",
+      "name": "梳理文章核心内容和金句"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "14o3S1xRCvGotZwU48Fp0C8JGpE5SIFsau7r2xfpD1Ck",
+          "mode": "list",
+          "cachedResultName": "自媒体选题库",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14o3S1xRCvGotZwU48Fp0C8JGpE5SIFsau7r2xfpD1Ck/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "公众号选题",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14o3S1xRCvGotZwU48Fp0C8JGpE5SIFsau7r2xfpD1Ck/edit#gid=0"
+        },
+        "event": "rowAdded",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1024,
+        128
+      ],
+      "id": "23eeb979-e922-4a59-9256-68d042745dd3",
+      "name": "Google Sheets Trigger",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "3ixoXSg0iuEp2RGI",
+          "name": "Google Sheets Trigger account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "=deepseek-chat",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        496,
+        304
+      ],
+      "id": "7fe54297-343d-405a-bcbe-e06d72af513b",
+      "name": "DeepSeek Chat Model",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "w2l1BwFih5cyUWGb",
+          "name": "DeepSeek account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        -240,
+        736
+      ],
+      "id": "f18ec84b-91a3-4840-bc05-a3af15406af2",
+      "name": "DeepSeek Chat Model1",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "w2l1BwFih5cyUWGb",
+          "name": "DeepSeek account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 获取输入的文章内容\nconst content = $input.first().json.new_content;\n\n// 定义 HTML 结构的开头部分，设置整体的样式\nlet html = `\n<div style=\"font-family: 'Microsoft YaHei', sans-serif; line-height: 1.8; padding: 0 16px; margin: 0 auto; max-width: 800px;\">\n`;\n\n// 对文章内容进行分段处理\nconst paragraphs = content.split('\\n');\nlet inList = false; // 跟踪是否在列表中\n\nparagraphs.forEach(paragraph => {\n    // 处理加粗语法：将 ****内容**** 替换为 <strong>内容</strong>\n    let processedParagraph = paragraph;\n    if (processedParagraph.includes('****')) {\n        processedParagraph = processedParagraph.replace(/\\*\\*\\*(.*?)\\*\\*\\*/g, '<strong>$1</strong>');\n    }\n    \n    // 处理小标题（以###开头的行）\n    if (paragraph.startsWith('###')) {\n        // 如果之前在列表中，先关闭列表\n        if (inList) {\n            html += '</ul>';\n            inList = false;\n        }\n        const title = paragraph.substring(3);\n        html += `<h3 style=\"margin-top: 24px; margin-bottom: 16px; font-size: 20px; color: #800000; font-weight: bold;\">${title}</h3>`;\n    } \n    // 处理分割线（内容为---的行）\n    else if (paragraph.trim() === '---') {\n        // 如果之前在列表中，先关闭列表\n        if (inList) {\n            html += '</ul>';\n            inList = false;\n        }\n        html += `<hr style=\"border: none; border-top: 1px solid #eee; margin: 24px 0;\">`;\n    } \n    // 处理列表项（以-开头的行）\n    else if (paragraph.trim().startsWith('- ')) {\n        const listItem = paragraph.trim().substring(2);\n        // 如果不在列表中，开始列表\n        if (!inList) {\n            html += `<ul style=\"margin-top: 8px; margin-bottom: 8px; padding-left: 24px;\">`;\n            inList = true;\n        }\n        html += `<li style=\"margin-bottom: 6px;\">${listItem}</li>`;\n    } \n    // 处理普通段落\n    else if (paragraph.trim() !== '') {\n        // 如果之前在列表中，先关闭列表\n        if (inList) {\n            html += '</ul>';\n            inList = false;\n        }\n        html += `<p style=\"margin-top: 0; margin-bottom: 16px; color: #555;\">${processedParagraph}</p>`;\n    }\n});\n\n// 关闭<ul>标签（如果有打开的话）\nif (inList) {\n    html += '</ul>';\n}\n\n// 关闭最外层的div标签\nhtml += '</div>';\n\n// 输出生成的HTML\nreturn [{\n  json: {\n    htmlContent: html\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        512
+      ],
+      "id": "8abbc851-cfde-4416-97aa-e7b6ab1fae10",
+      "name": "转化为网页格式"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://ark.cn-beijing.volces.com/api/v3/images/generations",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"model\": \"doubao-seedream-4-0-250828\",\n    \"prompt\": {{ $('提取标题、内容、图片提示词1').first().json.newTitle.toJsonString() }},\n    \"response_format\": \"url\",\n    \"size\": \"1664x928\",\n    \"seed\": -1,\n    \"guidance_scale\": 2.5,\n    \"watermark\": false\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1520,
+        512
+      ],
+      "id": "9ef1792c-1cc8-445f-b829-600ef2ddc4c1",
+      "name": "生成封面"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cf05497e-a6ca-48b8-98c8-81b22bf0fa5b",
+              "name": "new_img_prompt",
+              "value": "={{ $('提取标题、内容、图片提示词1').item.json.new_img_prompt }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -80,
+        1024
+      ],
+      "id": "b1bf23f3-b273-4e12-ba96-2c9e87150b5f",
+      "name": "提取图片提示词"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "new_img_prompt",
+        "include": "=No Other Fields",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        160,
+        1024
+      ],
+      "id": "d789e4bb-be68-45fc-9ba7-82c0bd1ba8d4",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        400,
+        1024
+      ],
+      "id": "8221f910-b5f4-4467-80b3-2135ed0469eb",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "amount": 10
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        144,
+        1216
+      ],
+      "id": "ab0f3978-6246-4e2d-abae-8a022e5da893",
+      "name": "Wait",
+      "webhookId": "8d00135d-a1c4-4c99-a314-f829a8a1ecba"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "media_url"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        752,
+        1008
+      ],
+      "id": "16185bdc-0adc-4282-9fd6-039af629a343",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://ark.cn-beijing.volces.com/api/v3/images/generations",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"model\": \"doubao-seedream-4-0-250828\",\n    \"prompt\": \"{{ $json.new_img_prompt }}\",\n    \"response_format\": \"url\",\n    \"size\": \"1664x928\",\n    \"seed\": -1,\n    \"guidance_scale\": 2.5,\n    \"watermark\": false\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        592,
+        1232
+      ],
+      "id": "204a1eff-3872-4152-9a0a-5b095f78d859",
+      "name": "生成章节图片"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        240,
+        768
+      ],
+      "id": "6d8cf3cc-7a7d-4973-ace3-7aa283cd9e97",
+      "name": "DeepSeek Chat Model2",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "w2l1BwFih5cyUWGb",
+          "name": "DeepSeek account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.output }}",
+        "options": {
+          "systemMessage": "=# 角色\n你是一位顶尖的中文社交媒体内容策略师和创意总监，拥有将任何平实文章点石成金的超凡能力。\n\n# 核心任务\n你的任务是：仔细阅读下方的【文章原文】，然后严格按照【创作指令与输出格式】的要求，生成一个包含`Title`和`Summary`的**纯净JSON对象**。\n\n---\n\n# 【创作指令与输出格式】\n\n## 1. 输出格式要求:\n*   **【最高优先级指令】**: 你的唯一输出必须是一个语法100%正确的、**纯净的JSON对象**。\n*   **结构一致**: 必须严格按照下方的JSON结构输出，键名和数据类型不得有任何变动。\n*   **内容转义 (核心规则)**: 在为`\"Title\"`和`\"Summary\"`字段生成内容时，如果内容中本身包含任何双引号 (`\"`)，你必须将其转义为 `\\\"`。这是确保JSON语法正确的关键。例如，若标题为 `他说：“你好”`，在JSON中必须写为 `\"Title\": \"他说：\\\"你好\\\"\"`。\n*   **严禁污染**: 绝对禁止在JSON对象之外输出任何文本，包括任何解释、注释，或是在前后包裹 ` ```json ` 和 ` ``` ` 标记。\n\n```json\n{\n  \"Title\": \"String\",\n  \"Summary\": \"String\"\n}\n\n---\n\n## 2. 各字段创作指令:\n\n### **\"Title\" (String):**\n*   **目标**: 基于【文章原文】，创作一个抓人眼球、激发强烈好奇心的爆款标题。\n*   **技巧**: 灵活运用数字、疑问、对比、悬念、利益点等技巧。\n*   **禁忌**: 绝对禁止平铺直叙、枯燥乏味的标题。\n\n### **\"Summary\" (String):**\n*   **硬性规定**: 严格控制在60个汉字以内（含标点符号）。这是最高优先级的指令，必须遵守。\n*   **目标**: 基于【文章原文】，用生动、有吸引力的语言重写摘要，让读者在3秒内理解文章核心价值并产生阅读兴趣。\n*   **技巧**: 使用第二人称“你”与读者对话，营造代入感。可以先描绘一个痛点，然后给出解决方案的暗示。结尾最好以一个问题或一个引人思考的陈述来引导用户继续阅读。\n*   **禁忌**: 禁止直接摘抄原文句子。 helpful assistant"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        208,
+        512
+      ],
+      "id": "706fac10-8154-487c-98a3-412ca03668b8",
+      "name": "输出标题摘要"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "708a75ac-2ded-4d80-aedb-de62f1d90e96",
+              "leftValue": "={{ $json[' 状态'] }}",
+              "rightValue": "已审核",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -784,
+        128
+      ],
+      "id": "4fd045f7-c1b6-422e-a846-00227ea1c437",
+      "name": "是否审核"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.dajiala.com/fbmain/monitor/v3/article_html",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "url",
+              "value": "={{ $json['对标信息'] }}"
+            },
+            {
+              "name": "key",
+              "value": "JZLa35f48000ba21830"
+            },
+            {
+              "name": "verifycode"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -48,
+        -16
+      ],
+      "id": "cff3ab01-0df9-4a65-8b11-4f2476e1f20b",
+      "name": "获取文章信息"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "bc4ed5f9-a4a8-42f1-bac0-8686aea1e755",
+              "leftValue": "={{ $('Google Sheets Trigger').item.json['来源'] }}",
+              "rightValue": "人工",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        880,
+        112
+      ],
+      "id": "d0c8ea85-7bb1-4e32-86d6-5a1b5d804116",
+      "name": "If"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1520,
+        112
+      ],
+      "id": "24674479-8f17-4a7a-9fb6-43ca2f64228b",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "14o3S1xRCvGotZwU48Fp0C8JGpE5SIFsau7r2xfpD1Ck",
+          "mode": "list",
+          "cachedResultName": "自媒体选题库",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14o3S1xRCvGotZwU48Fp0C8JGpE5SIFsau7r2xfpD1Ck/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "公众号选题",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14o3S1xRCvGotZwU48Fp0C8JGpE5SIFsau7r2xfpD1Ck/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "对标信息": "={{ $('审核中').item.json['对标信息'] }}",
+            "文章分析": "={{ $json.output }}"
+          },
+          "matchingColumns": [
+            "对标信息"
+          ],
+          "schema": [
+            {
+              "id": "日期",
+              "displayName": "日期",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "对标信息",
+              "displayName": "对标信息",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "文章分析",
+              "displayName": "文章分析",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "文章定位",
+              "displayName": "文章定位",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "参考信息",
+              "displayName": "参考信息",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": " 状态",
+              "displayName": " 状态",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "来源",
+              "displayName": "来源",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1200,
+        32
+      ],
+      "id": "012363dd-7aab-4e46-a5ad-4ee09562fc2c",
+      "name": "更新文章分析",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "dxI5BRk9GOM26ffW",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        -1024,
+        704
+      ],
+      "id": "814f969f-7a07-4c98-81c6-7d8bc9c5660f",
+      "name": "DeepSeek Chat Model3",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "w2l1BwFih5cyUWGb",
+          "name": "DeepSeek account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "query": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Query', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "@tavily/n8n-nodes-tavily.tavilyTool",
+      "typeVersion": 1,
+      "position": [
+        -864,
+        752
+      ],
+      "id": "b095c743-0a07-4689-aae2-ca3a6b193d13",
+      "name": "Search in Tavily",
+      "credentials": {
+        "tavilyApi": {
+          "id": "m4zNZwKvZRppndhL",
+          "name": "Tavily account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# 1、在Google Sheet 中建立公众号选题库表格，我们将选题信息收集上来（人工收集或者机器收集）\n# 2、人工对选题进行审核确认，确保文章风格符合我们账号的定位。\n# 3、抓取对标文章信息，用AI对文字进行总结提炼。\n# 4、用AI在网络上收集二创创作的素材，作为新的文章的血肉。\n# 5、用AI结合文章主旨和参考素材进行创作。\n# 6、生成文章封面\n# 7、生成章节图片\n# 8、 将图片嵌入文章的占位符中\n# 9、 将文章上传到公众号草稿箱。",
+        "height": 560,
+        "width": 2784,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1056,
+        -512
+      ],
+      "typeVersion": 1,
+      "id": "b9af088e-1831-4126-9a98-4ca8664144f4",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.weixin.qq.com/cgi-bin/draft/add?access_token= {{ $('获取access token').item.json.access_token }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"articles\": {{ $json.content }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1232,
+        1008
+      ],
+      "id": "24dec2e7-9baa-4a25-898d-b1eeecc5c9f5",
+      "name": "上传到公众号草稿箱"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=以下是文章的主旨。\n {{ $('梳理文章核心内容和金句').item.json.output }}\n\n## 指令\n请调用Tavily Tool 完成文章主旨相关的信息收集。\n\n## 输出格式\n将搜索结果摘要和参考来源信息按照json格式输出，不要有其他输出。格式如下：\n{\n\t\"结果摘要\": \"\",\n\t\"来源\": \"\"\n}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=# 角色\n你是信息分析专家，必须严格基于 Tavily 搜索结果回答问题。\n\n# 可用信息\n1. 用户原始问题：{{original_question}}\n2. Tavily 搜索结果：{{search_results}}\n\n# 回答要求\n1. **必须引用来源**：每个事实必须标注来源编号，格式：【1】【2】\n2. **优先使用**：优先使用 `answer` 字段的 AI 总结\n3. **补充细节**：用 `content` 中的细节补充\n4. **诚实说明**：如果结果不足，明确说明\n5. **格式清晰**：分点、分段落，重要信息加粗\n\n# 输出格式\n## 📊 搜索结果摘要\n- 主要发现1【1】\n- 主要发现2【2】\n\n## 🔍 详细分析\n[基于搜索结果的详细分析...]\n\n## 📌 信息来源\n1. [标题1](URL1)\n2. [标题2](URL2)"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        -992,
+        512
+      ],
+      "id": "886d82d6-6c74-4c88-a76e-9ddba53f6702",
+      "name": "素材补充"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=以下是核心主旨：\n {{ $('梳理文章核心内容和金句').item.json.output }}\n\n以下是参考文献：\n {{ $('素材补充').item.json.output['结果摘要'] }}\n\n请在生成终稿时注意：\n1. **严格依照核心主旨**，不可脱离主旨自由发挥。\n2. **内容必须基于参考文献中的事实、数据和案例**，禁止虚构。\n3. **每段必须包含至少一个具体案例或类比**，体现思考深度。\n4. **尽量用口语化、公众号风格表达**，保持段落易读、逻辑连贯。\n5. **每段在段落开头或适当位置埋下《图片》占位符**，后续生成图片提示词。",
+        "options": {
+          "systemMessage": "=# 角色\n你是一位理财领域的深度思考者与实战导师。\n你不仅分享“如何理财”，更痴迷于探寻“为什么这样理财最有效”。你能将复杂的理财概念（如投资策略、资产配置、风险管理）与个人成长理念（心智模型、时间管理、自由选择）融合，通过类比、具体案例和逻辑分析，让读者既能理解，又能立刻付诸实践。\n\n你的核心价值在于：\n- 不只是教操作，而是让读者理解理财背后的思维逻辑\n- 将抽象概念落地到日常生活和实际投资决策\n- 引导读者从“被动跟风者”变为“主动思考者”，建立自己的财务系统与思维系统\n\n## 输入指令（Input Directives）\n你将收到两份高度精炼的核心情报，作为本次创作的全部依据\n1、核心主旨\n  *这是本次创作的“灵魂”和最高纲领，它定义了文章的目标、对话的用户以及大期望达成的效果。\n  *你必须将这个主旨内化于心，确保文章的每一个字、每一个案例、每一个论点都服务于它。\n\n2、参考文献\n   *这是一个结构化的JSON情报档案，是经过外部搜索验证后，构成文章血肉的“论据”和“素材”\n   *你必须以这份素材为事实基础，在其中`keyArgumentsAndEvidence`部分提供的核心论点之上构建你的文章。严禁脱离素材进行虚构。\n\n##核心任务(Core Task)\n  你的核心任务是扮演一位“总建筑师”。你需要以【核心主旨】为设计蓝图，使用【参考文献】这份经过精选的建筑材料，融合、编织、并构建出一篇逻辑严密、充满洞见的深度原创文章。\n\n## 格式\n一、开篇结构​\n\n简短标题句(1-3个字或一句话),直接点明主题​\n开门见山:第一段就抛出核心观点或引发思考的问题​\n​\n二、内容风格特征​\n1. 语言特点:​\n口语化表达,像聊天一样写作​，短句为主,节奏明快,易读性强​，适度使用\"你看\"\"你想想\"\"说白了\"\"其实\"等口语词​，偶尔加入网络用语和俏皮话(如\"纯纯傻缺\"\"爽歪歪\")​\n​\n2. 思维方式:​\n直击人性:不回避利益、金钱、人性弱点​\n​反常识思考:挑战主流观点,提供新视角​\n​破除幻想:揭示残酷真相,祛魅化处理​\n​强调行动:反对空谈,强调实践和执行​\n​\n3. 论证结构:​\n大量使用对比论证(强者vs弱者、过去vs现在)​\n​举具体例子(历史人物、身边案例、自身经历)​\n​设置假设场景:\"你让他...他会...\"​\n​【图片提示词要求】 - 每段1个提示词，描述该段核心场景 - 英文描述，适配Midjourney/DALL-E - 50-80词，包含：主体、环境、光线、氛围、构图角度 - 风格统一，偏写实摄影风或插画风 \n- 示例：「A tired office worker sitting by the window at night, warm desk lamp light, laptop screen glowing, coffee cup beside, cityscape outside, cinematic photography style, soft focus background」 \n\n【输出格式 - 严格执行】 纯JSON格式，不要markdown包裹：\n { \"new_title\": \"标题文本\", \n   \"new_content\": \"### 小标题1\\n\\n《图片》\\n\\n段落1正文...\\n\\n### 小标题2\\n\\n《图片》\\n\\n段落2正文...\\n\\n### 小标题3\\n\\n《图片》\\n\\n段落3正文...\\n\\n### 小标题4\\n\\n《图片》\\n\\n段落4正文...\", \n   \"new_img_prompt\": [ \"prompt 1\", \"prompt 2\", \"prompt 3\", \"prompt 4\" ] \n} \n注意事项： \n1. 必须是可解析的JSON \n2. new_content中换行用\\n \n3. 引号内容注意转义 \n4. 不要添加任何markdown代码块标记 \n【最后提醒】 \n写作时想象你是在微信上给朋友发一条很长的消息，边想边打字，有些话想到哪说到哪，不是在完成一篇命题作文。真实的人写东西会： \n- 句子长度不规律 \n- 偶尔跑题 \n- 有些想法没说完就跳到下一个 \n- 会自己否定自己（「也不是说...」「当然也不一定...」） \n- 会有语气停顿和情绪波动\n-避免 AI 风格化句子或抽象概念堆砌，保证真实感和公众号可读性\n 现在请开始创作。  "
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        -240,
+        512
+      ],
+      "id": "fdebf30d-8cf6-4772-8d87-6760b603bdae",
+      "name": "文章创作"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. 获取当前正在处理的这一个数据项 (item)\n// 在 'Run Once for Each Item' 模式下，我们使用 $input.item\n\nconst inputString = $('文章创作').first().json.output ;\n// 2. 清理字符串，提取出纯净的 JSON 部分\n// 这段正则表达式会匹配并提取出 '{' 和 '}' 之间的所有内容\nconst jsonMatch = inputString.match(/\\{[\\s\\S]*\\}/);\nconsole.log('JSON match result:', jsonMatch);\n// 如果当前项没有找到匹配的 JSON，可以选择跳过或返回错误\nif (!jsonMatch) {\n  // 您可以选择返回一个空对象，让工作流继续\n  // return { json: { error: \"No valid JSON found\" } }; \n  // 或者像原来一样抛出错误，让工作流在这里停止\n  throw new Error(\"在输入字符串中没有找到有效的 JSON 对象。\");\n}\n\n// .match() 返回的是一个数组，我们需要的是第一个匹配项\nconst jsonString = jsonMatch[0];\n\n// 3. 将清理后的 JSON 字符串解析成一个真正的 JavaScript 对象\nconst dataObject = JSON.parse(jsonString);\n\n// 4. 从对象中提取 new_content 和 new_img_prompt 的值 \nconst new_content = dataObject.new_content;\nconst new_img_prompt=dataObject.new_img_prompt;\n\n//---------\n// 1. 获取当前正在处理的这一个数据项 (item)\n// 在 'Run Once for Each Item' 模式下，我们使用 $input.item\nconst summaryInput =  $('输出标题摘要').first().json.output ;\n\n// 2. 清理字符串，提取出纯净的 JSON 部分\n// 这段正则表达式会匹配并提取出 '{' 和 '}' 之间的所有内容\nconst summaryjsonMatch = summaryInput.match(/\\{[\\s\\S]*\\}/);\n\n// 如果当前项没有找到匹配的 JSON，可以选择跳过或返回错误\nif (!summaryjsonMatch) {\n  // 您可以选择返回一个空对象，让工作流继续\n  // return { json: { error: \"No valid JSON found\" } }; \n  // 或者像原来一样抛出错误，让工作流在这里停止\n  throw new Error(\"在输入字符串中没有找到有效的 JSON 对象。\");\n}\n\n// .match() 返回的是一个数组，我们需要的是第一个匹配项\nconst summaryjsonString = summaryjsonMatch[0];\n\n// 3. 将清理后的 JSON 字符串解析成一个真正的 JavaScript 对象\nconst summarydataObject = JSON.parse(summaryjsonString);\n\n// 4. 从对象中提取 title 和 summary 的值\nconst title = summarydataObject.Title;\nconst summary = summarydataObject.Summary;\n\n\n// 5. 返回一个处理后的新对象\n// 在 'Run Once for Each Item' 模式下，返回的是一个对象，而不是包含对象的数组\nreturn {\n  json: {\n    newTitle: title,\n    new_content: new_content,\n    new_img_prompt:new_img_prompt,\n    summary: summary\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        592,
+        512
+      ],
+      "id": "0e4c1ff7-5d09-47ea-8bbe-d78717768825",
+      "name": "提取标题、内容、图片提示词1"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "14o3S1xRCvGotZwU48Fp0C8JGpE5SIFsau7r2xfpD1Ck",
+          "mode": "list",
+          "cachedResultName": "自媒体选题库",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14o3S1xRCvGotZwU48Fp0C8JGpE5SIFsau7r2xfpD1Ck/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "公众号选题",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14o3S1xRCvGotZwU48Fp0C8JGpE5SIFsau7r2xfpD1Ck/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "对标信息": "={{ $('Google Sheets Trigger').item.json[\"对标信息\"] }}",
+            " 状态": "创作完成"
+          },
+          "matchingColumns": [
+            "对标信息"
+          ],
+          "schema": [
+            {
+              "id": "日期",
+              "displayName": "日期",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "对标信息",
+              "displayName": "对标信息",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "文章分析",
+              "displayName": "文章分析",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "文章定位",
+              "displayName": "文章定位",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "参考信息",
+              "displayName": "参考信息",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": " 状态",
+              "displayName": " 状态",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "来源",
+              "displayName": "来源",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1488,
+        1008
+      ],
+      "id": "01f6596f-4f6c-4236-b94a-1a4c1ef5d9e9",
+      "name": "更新状态",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "dxI5BRk9GOM26ffW",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.weixin.qq.com/cgi-bin/material/add_material?access_token={{$node[\"获取access token\"].json[\"access_token\"]}}&type=image",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "multipart/form-data"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "media",
+              "inputDataFieldName": "data1"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -736,
+        1024
+      ],
+      "id": "3708a5c4-6c5d-4696-a4f1-37b97248d70d",
+      "name": "上传封面图片"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.data[0].url }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "data1"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -992,
+        1024
+      ],
+      "id": "c6ba37f5-141b-46d9-ae67-5b1e2dabb2b3",
+      "name": "获取图片二进制"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid={{ $json.WechatAppid }}&secret={{ $json.wechatSercetId }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1296,
+        512
+      ],
+      "id": "7c3c0317-5be7-4630-a060-295b18e0e71f",
+      "name": "获取access token"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0e77e05a-707a-4d4a-945f-abbd7593ad5a",
+              "name": "WechatAppid",
+              "value": "wxea18c58bc4d0baf5",
+              "type": "string"
+            },
+            {
+              "id": "bb651695-f7bc-41e2-93e2-dfa28a58a54c",
+              "name": "wechatSercetId",
+              "value": "0d8572edf8fa28a5c09ba38bf9905f26",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1056,
+        512
+      ],
+      "id": "be231ee3-0a00-41f7-8bf8-4ff68951a702",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Code node\nreturn items.map(item => {\n  let mediaId = '';\n\n  // 第一种：直接在 json.media_id\n  if (typeof item.json?.media_id === 'string') {\n    mediaId = item.json.media_id;\n  }\n  // 第二种：在 json.data.media_id\n  else if (typeof item.json?.data === 'object' && typeof item.json.data.media_id === 'string') {\n    mediaId = item.json.data.media_id;\n  }\n  // 第三种：data 是 JSON 字符串\n  else if (typeof item.json?.data === 'string') {\n    try {\n      const parsed = JSON.parse(item.json.data);\n      if (parsed && typeof parsed.media_id === 'string') {\n        mediaId = parsed.media_id;\n      }\n    } catch (e) {}\n  }\n\n  return {\n    json: {\n      media_id: mediaId\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -416,
+        1024
+      ],
+      "id": "70ee5f9d-1b6a-45c1-ba58-d7f96f7435fd",
+      "name": "拆分media_id"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.weixin.qq.com/cgi-bin/material/add_material?access_token={{$node[\"获取access token\"].json[\"access_token\"]}}&type=image",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "multipart/form-data"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "media",
+              "inputDataFieldName": "data2"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -272,
+        1200
+      ],
+      "id": "13270e32-a431-4cc0-a33e-ec09877b652c",
+      "name": "上传章节图"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.data[0].url }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "data2"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -736,
+        1200
+      ],
+      "id": "30dda78e-aed3-4463-96b7-206179f3f8ae",
+      "name": "获取图片二进制1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Code node\nreturn items.map(item => {\n  let url = '';\n\n  // 第一种：直接在 json.url\n  if (typeof item.json?.url === 'string') {\n    url = item.json.url;\n  }\n  // 第二种：在 json.data.url\n  else if (typeof item.json?.data === 'object' && typeof item.json.data.url === 'string') {\n    url = item.json.data.url;\n  }\n  // 第三种：data 是 JSON 字符串\n  else if (typeof item.json?.data === 'string') {\n    try {\n      const parsed = JSON.parse(item.json.data);\n      if (parsed && typeof parsed.url === 'string') {\n        url = parsed.url;\n      }\n    } catch (e) {}\n  }\n\n  return {\n    json: {\n      media_url: url\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -64,
+        1200
+      ],
+      "id": "a2f0da55-320f-4dc9-b378-f5205b974a36",
+      "name": "拆分URL"
+    },
+    {
+      "parameters": {
+        "content": "# 对标分析",
+        "height": 400,
+        "width": 2784
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1056,
+        64
+      ],
+      "typeVersion": 1,
+      "id": "1899db0e-64f8-4a0c-bb68-dcb3f00a50fc",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "# 内容二创",
+        "height": 1040,
+        "width": 2784,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1056,
+        448
+      ],
+      "typeVersion": 1,
+      "id": "1c66abd6-2e05-483f-accb-ce124746597c",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n\t\"结果摘要\": \"\",\n\t\"来源\": \"\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -736,
+        736
+      ],
+      "id": "ff7ee6a9-6752-451c-a5e7-ff98d8a427e6",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "14o3S1xRCvGotZwU48Fp0C8JGpE5SIFsau7r2xfpD1Ck",
+          "mode": "list",
+          "cachedResultName": "自媒体选题库",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14o3S1xRCvGotZwU48Fp0C8JGpE5SIFsau7r2xfpD1Ck/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "公众号选题",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14o3S1xRCvGotZwU48Fp0C8JGpE5SIFsau7r2xfpD1Ck/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "对标信息": "={{ $('审核中').item.json['对标信息'] }}",
+            "参考信息": "={{ $json.output['来源'] }}"
+          },
+          "matchingColumns": [
+            "对标信息"
+          ],
+          "schema": [
+            {
+              "id": "日期",
+              "displayName": "日期",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "对标信息",
+              "displayName": "对标信息",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "文章分析",
+              "displayName": "文章分析",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "文章定位",
+              "displayName": "文章定位",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "参考信息",
+              "displayName": "参考信息",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": " 状态",
+              "displayName": " 状态",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "来源",
+              "displayName": "来源",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -608,
+        512
+      ],
+      "id": "8f411d57-000e-4fae-87fa-c4f872526aef",
+      "name": "更新参考信息",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "dxI5BRk9GOM26ffW",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e7a7b6df-3c48-400b-81d3-127b4557989d",
+              "name": "原文",
+              "value": "={{ $('Google Sheets Trigger').item.json['文章原文'] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        0,
+        160
+      ],
+      "id": "966da8a6-cdad-4abb-a979-b5c6601e18f2",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        336,
+        112
+      ],
+      "id": "677cd238-52bc-4ad6-be0a-a5807340a3a3",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "21e7d5c0-b9f6-4219-8679-5dc1523f9862",
+              "name": "原文",
+              "value": "={{ $json.data.html }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        112,
+        -16
+      ],
+      "id": "690b82bc-b9e2-45d6-b54d-8578c42909ed",
+      "name": "Edit Fields2"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "14o3S1xRCvGotZwU48Fp0C8JGpE5SIFsau7r2xfpD1Ck",
+          "mode": "list",
+          "cachedResultName": "自媒体选题库",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14o3S1xRCvGotZwU48Fp0C8JGpE5SIFsau7r2xfpD1Ck/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "公众号选题",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14o3S1xRCvGotZwU48Fp0C8JGpE5SIFsau7r2xfpD1Ck/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "对标信息": "={{ $json['对标信息'] }}",
+            " 状态": "创作中"
+          },
+          "matchingColumns": [
+            "对标信息"
+          ],
+          "schema": [
+            {
+              "id": "日期",
+              "displayName": "日期",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "对标信息",
+              "displayName": "对标信息",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "文章分析",
+              "displayName": "文章分析",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "文章定位",
+              "displayName": "文章定位",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "参考信息",
+              "displayName": "参考信息",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": " 状态",
+              "displayName": " 状态",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        -544,
+        112
+      ],
+      "id": "1be8c0fb-ac14-49da-bfb7-baf5ae45b1a3",
+      "name": "审核中",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "dxI5BRk9GOM26ffW",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "879aeb64-9e34-4932-a6f7-030b59c7f5e7",
+              "leftValue": "={{ $('Google Sheets Trigger').item.json['文章原文'] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -336,
+        112
+      ],
+      "id": "cf23c422-b809-49c6-a374-b80e323ea160",
+      "name": "人工选题"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 获取图片URL列表\nconst image_urls = $input.first().json.media_url;\nconsole.log(`获取到 ${image_urls.length} 个图片URL`);\n\n// 读取HTML模板\nlet html_content = '';\ntry {\n  html_content = $('转化为网页格式').first().json.htmlContent || '';\n  console.log(`原始HTML内容长度: ${html_content.length}`);\n  const placeholderCount = (html_content.match(/《图片》/g) || []).length;\n  console.log(`《图片》占位符数量: ${placeholderCount}`);\n} catch (error) {\n  console.log(`读取HTML模板失败: ${error.message}`);\n  html_content = '';\n}\n\n// 逐个替换《图片》占位符\nlet current_content = html_content;\nlet replace_count = 0;\n\n// 确保 image_urls 是数组\nconst urls = Array.isArray(image_urls) ? image_urls : [image_urls];\n\nfor (let i = 0; i < urls.length; i++) {\n  const img_url = urls[i];\n  if (current_content.includes('《图片》')) {\n    current_content = current_content.replace('《图片》', `<img src=\"${img_url}\">`);\n    replace_count++;\n    console.log(`已替换第 ${replace_count} 个《图片》占位符`);\n  } else {\n    console.log(`警告: 没有足够的《图片》占位符用于图片 ${i+1}`);\n    break;\n  }\n}\n\n// 替换剩余的占位符（如果有）\nif (current_content.includes('《图片》')) {\n  const remainingMatches = current_content.match(/《图片》/g) || [];\n  const remaining_count = remainingMatches.length;\n  current_content = current_content.replace(/《图片》/g, '[图片缺失]');\n  console.log(`将 ${remaining_count} 个剩余占位符替换为 [图片缺失]`);\n}\n\nconsole.log(`最终内容长度: ${current_content.length}`);\nconsole.log(`总共替换了 ${replace_count} 个图片`);\n\n// 计算剩余的占位符数量\nconst remainingPlaceholders = (current_content.match(/\\[图片缺失\\]/g) || []).length;\nconst originalPlaceholders = (html_content.match(/《图片》/g) || []).length;\n\n// 1. 定义微信草稿 API 需要的 articles 数组模板\nconst template = [{\n  // 标题：上个节点已经映射好的 title\n  title:$('提取标题、内容、图片提示词1').first().json.newTitle ,\n\n  // 封面图 media_id：上个节点输出的 media_id\n  thumb_media_id:$('拆分media_id').first().json.media_id ,\n\n  // 作者：优先用上个节点的 author，没有就用默认值\n  author: '追风的工作流',\n\n  // 摘要：注意这里用的是 digest，而不是 summary\n  digest: $('提取标题、内容、图片提示词1').first().json.summary,\n\n  // 是否显示封面图\n  show_cover_pic: 1,\n \n  content: current_content\n}];\nconst content = JSON.stringify(template);\n// 返回处理后的内容\nreturn [\n  {\n    json: {\n      content\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1008,
+        1008
+      ],
+      "id": "99aa9824-fc34-4082-a358-151fc4ef59a4",
+      "name": "构建入参格式"
+    }
+  ],
+  "pinData": {
+    "Google Sheets Trigger": [
+      {
+        "json": {
+          "日期": "2025-12-30",
+          "对标信息": "https://mp.weixin.qq.com/s/WCVidyVwngk2XnnXAUFo-w",
+          "文章分析": "### 核心内容摘要\n\n文章指出，当前AI领域存在一个核心悖论：拥有垂直行业经验的业务专家，往往缺乏开发、部署和销售AI Agent所需的技术与市场能力。作者回顾了AI工作流开发的四个阶段：1.0手搓时代（拼技术熟练度）、2.0 AI辅助生成（拼提示词能力）、3.0技能封装（提高生成效率），但指出这些阶段仍停留在“卷工具”层面，产品难以卖出高价。\n\n作者认为，真正的突破在于4.0商业闭环时代。其核心是：将行业知识（Know-how）封装进工具，直接售卖“效果”而非“工具”，因为用户愿意为效果付高价。文章重点介绍了“MuleRun Creator Studio”作为实现这一目标的平台，它通过提供全托管环境、内置支付与订单系统、以及即将推出的“Mule Agent Builder”（允许用自然语言构建复杂Agent），大幅降低了技术门槛，让创作者能专注于产品创意和行业知识，直接实现商业化变现。文章强调，这是抢占AI Agent市场红利、从“开发者”转向“产品经理”和“生意人”的关键时机。\n\n### 文中金句\n\n- 懂业务的人不懂代码，懂代码的人不懂流量，懂流量的人不懂变现。这是一个死结。\n- 用户可能不愿意为工具付费，但一定会为效果付高价。\n- 也就是说，以前我们是在**卷工具**，4.0 时代，我们是在**做生意**。",
+          "文章定位": "引流",
+          "参考信息": "",
+          "来源": "机器",
+          " 状态": "创作完成"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "日期": "2025-12-30",
+          "对标信息": "https://mp.weixin.qq.com/s/WCVidyVwngk2XnnXAUFo-w",
+          "文章分析": "",
+          "文章定位": "引流",
+          "参考信息": "",
+          "来源": "人工",
+          " 状态": "创作完成"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "日期": "2025-12-30",
+          "对标信息": "https://mp.weixin.qq.com/s/84joN_p7LSfC8htu1tKjbQ",
+          "文章分析": "### 核心内容摘要\n\n文章的核心论点是：随着智谱GLM-4.7等国产AI大模型在代码和推理能力上的显著提升，特别是其强大的上下文学习（Context Learning）能力，由人类手工搭建复杂n8n工作流的时代已经结束。作者通过一个实战案例，展示了如何利用GLM-4.7驱动Claude Code，创建一个能够自动生成n8n工作流的AI Skill。该Skill能够根据用户自然语言描述的需求，自动从n8n官网搜索并学习现有工作流模板，然后结合精心设计的专家级提示词，生成可直接导入、模块化、工业级的n8n工作流JSON文件及配套说明文档。整个过程实现了从需求理解、参考学习到代码生成的全自动化，极大地降低了自动化工作流的构建门槛，宣告了传统n8n培训和定制服务的价值被AI技术“平权化”。\n\n### 文中金句\n\n- 由人类手工搭建工作流的时代，已经结束了。\n- AI技术的本质就是平权，它存在的意义就是把那些昂贵的、原本属于少数人的技术壁垒，夷为平地。\n- 如果你的目标是搞定工作流，GLM-4.7 是目前性价比最高、最稳的解法。\n- 我不让 AI 创造，我让它“抄作业”。也就是：Context Learning（上下文学习）。\n- 它不是在“生成”，它是在“理解”了业务逻辑之后，像一个高级架构师一样在“构建”。",
+          "文章定位": "引流",
+          "参考信息": "",
+          "来源": "人工",
+          " 状态": "创作完成"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "日期": "2025-12-30",
+          "对标信息": "https://mp.weixin.qq.com/s/IWimsldbLPnNx2gfToYTig",
+          "文章分析": "### 核心内容摘要\n\n文章核心观点是：利用n8n自动化工具和AI视频生成技术（如Veo 3.1、Sora 2），跨境电商的视频制作环节已实现高度自动化，成本极低且效率极高，这将彻底改变行业竞争格局。作者基于自身数据分析背景，从海量模板中提炼出一套“万能视频生成标准管道”，该管道包含指令输入、Prompt工厂、视觉锚定、视频生成、全网分发与回馈六个核心步骤。文章随后详细介绍了10个基于此管道的具体工作流模板，分别解决视觉一致性、规模化量产、UGC模拟、多平台分发和长视频再利用等不同业务痛点，旨在帮助读者搭建一个7x24小时不间断的“视频工厂”，从而在AI时代凭借执行力建立竞争优势。\n\n### 文中金句\n\n- 因为在AI时代，信息差不应该成为壁垒，执行力才是。\n- 现在的跨境电商视频制作，90%的环节已经不需要人了。\n- 所有的自动化视频工作流，拆解到底，都是这6个步骤的排列组合。\n- 这不仅仅是工具的升级，这是生产关系的改变。\n- 现在，你的竞争对手是那些已经把这套“标准管道”部署在服务器上，24小时不间断产出、测试、迭代的“自动化玩家”。",
+          "文章定位": "引流",
+          "参考信息": "1. 曾国藩5句改命箴言，最好背下来！(http://www.360doc.com/content/25/0921/17/35242528_1161746426.shtml)\n2. 《曾国藩领导力十二讲》-全部书评及评分(https://www.dedao.cn/ebook/reviews?id=rEQKv6PKN7rEo2Gxg96ZjApyMvQVlw58yl3Xb14PJzDkYaReqd8n5LOmB8d7egBx)\n3. 读《曾国藩传》 - Sail(https://www.sail.name/2022/02/13/reading-notes-of-Biography-zeng-guo-fan/)\n4. 曾国藩：家败一个奢字，人败一个逸字，讨人嫌一个骄字 - 知乎专栏(https://zhuanlan.zhihu.com/p/57175404)\n5. 【曾国藩家训】读书第一要有志，第二要有识，第三要有恒(http://www.360doc.com/content/24/1130/19/40344870_1140817125.shtml)",
+          "来源": "人工",
+          " 状态": "创作完成"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "日期": "2025-12-30",
+          "对标信息": "https://mp.weixin.qq.com/s/zDdb_9-P5spFgr9pCqCbJg",
+          "文章分析": "",
+          "文章定位": "引流",
+          "参考信息": "1. https://cloud.baidu.com/article/4704359\n2. https://cloud.tencent.com/developer/article/2555423\n3. https://modelers.csdn.net/69115eb15511483559e496f9.html\n4. https://zhuanlan.zhihu.com/p/1908668807607751251\n5. https://blog.csdn.net/shanxuanang/article/details/148906257",
+          "来源": "人工",
+          " 状态": "创作完成"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "日期": "2026-01-02 14:27:12",
+          "对标信息": "https://mp.weixin.qq.com/s/1QTGmjECBWyh2o3O34XlCQ",
+          "文章分析": "核心主题：作者在2026年初进行的个人年度复盘与展望，聚焦于投资策略、个人成长（IP、AI学习）和心态转变。\n目标人群：关注个人成长与投资理财的读者，尤其是对科技投资、认知提升有追求的投资者或创业者。\n\n选题类型：经验复盘 / 观点评论\n内容结构：以个人2025年经历（家庭、事业、投资、学习）为引，总结三点核心感悟，进而提出2026年在投资和个人IP方面的具体计划与决心。\n\n四选法则定位：\n你最深（专业/经验）：展示了在投资（周期认知、资产配置）、个人IP打造、AI工具应用方面的实践经验和深度思考。\n情绪触点：希望、共鸣、决心、反思、对平庸的焦虑、对真实自我的追求。\n热点事件：绑定“新年/年初”这一时间节点，进行年度复盘与展望。\n痛点需求：解决读者在投资上如何避免平庸、在个人成长上如何突破瓶颈、在信息时代如何保持清醒和真实性的痛点（能力与情绪类）。\n\n标题策略：使用年份制造时效感，“拒绝平庸”形成强烈观点和行动号召。\n关键词：2026年、拒绝平庸、投资、个人IP、AI、周期、真实\n\n优势亮点：1. 个人化叙事真诚，将投资、成长、家庭融为一体，有温度。2. 观点鲜明，提出“双曲线策略”、“认知杠杆”等具体概念，有启发性。3. 结合热点（新年）进行深度内容输出，时效与深度兼备。\n主要不足：内容较为个人化，对普通读者的普适性和直接指导性稍弱；投资部分观点相对宏观，缺乏更具体的操作指引。\n\n一句话选题总结：这是一篇面向成长型投资者的，分享如何在投资与个人成长中“拒绝平庸”、追求真实与清醒的年度复盘与展望文章。",
+          "文章定位": "",
+          "参考信息": "",
+          "来源": "机器",
+          " 状态": "创作完成"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "日期": "2026-01-02 16:47:26",
+          "对标信息": "http://mp.weixin.qq.com/s?__biz=MzIwMTQ1MzMwNQ==&mid=2458179287&idx=1&sn=c8c0cace7abc3ecb9ec86051b1573159&chksm=807d7ab20c43f1307f227ef48bf52b2c3e2d5eb6f56b639cd087cb6f5a7dbbb0073f3eb4bf27&scene=7#rd",
+          "文章分析": "核心主题：2025年值得普通用户优先选择的十款AI工具盘点与推荐\n目标人群：上班族、科研人员（包括图书馆员）、学生等需要利用AI工具提升效率的普通用户\n\n选题类型：清单合集 / 实用指南\n内容结构：总起（筛选必要性）— 分项介绍（10个工具，每项含简介、优点、缺点、平替）— 总结（组合使用策略）\n\n四选法则定位：\n你最深（专业/经验）：展示了作者对AI工具市场的广泛了解和深度使用经验，对各工具优缺点、性价比、适用场景有专业判断。\n情绪触点：焦虑（工具太多眼花缭乱）、希望（用对工具提升效率）、爽感（省钱避坑、获得高性价比方案）\n热点事件：未提供具体热点名称，但绑定“2025年”这一未来时间点，营造前瞻性和趋势感。\n痛点需求：解决读者在信息过载的AI工具市场中，面临的选择困难、试错成本高（时间/金钱）以及效率提升的需求。\n\n标题策略：数字（十佳）、时间限定（2025）、直接点明内容（AI工具）\n关键词：AI工具、2025、十佳、盘点、平替、性价比、效率\n\n优势亮点：1. 结构清晰，覆盖主流应用场景，提供“首选+平替”的实用组合策略，极具参考价值。2. 内容详实，对每个工具的评价具体到价格、优缺点、适用人群，信息密度高。3. 定位精准，面向“普通用户”，强调“省钱避坑”和“应对95%日常需求”，切中大众核心诉求。\n主要不足：内容偏向信息罗列和工具介绍，缺乏更深层的使用场景案例或作者个人独特的深度测评体验，同质化竞争下记忆点可能不足。\n\n一句话选题总结：这是一篇面向广大普通职场人和学生的，旨在帮助他们从海量AI工具中筛选出高性价比核心工具以提升效率的年度盘点指南。",
+          "文章定位": "",
+          "参考信息": "",
+          "来源": "机器",
+          " 状态": "待审核, 创作完成"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "日期": "2026-1-3 13:13",
+          "对标信息": "https://mp.weixin.qq.com/s/EbbsgqHKtZRq7RP88r0T9Q",
+          "文章分析": "### 核心内容摘要\n\n文章以个人经历为引，倡导通过理性消费来积极存钱。作者认为，金钱的意义在于为自由生活提供保障，而非满足物欲。为此，文章提出了七项具体的“不买”原则，旨在帮助读者减少非必要开支，分清“想要”与“需要”。这些原则包括：不为想象中的未来需求、便宜但无用、纯粹充面子、情绪上头、损害健康、商家制造的伪需求以及看似占便宜的促销活动而消费。坚持这些原则不仅能增加存款，更能使人摆脱消费欲望的奴役，成为金钱的主人，让每一分钱都服务于真正的生活与成长。\n\n### 文中金句\n\n- 钱最大的意义不是满足物欲，而是为自由的生活买单。\n- 真正的体面从来不看 logo，而是银行卡的余额给的底气，只有放下面子，才能守住里子。\n- 真正的省钱是“需要才买”，而不是“为了优惠而买”，不贪额外的便宜，就不会吃隐形的亏。\n- 你不再是金钱的奴隶，而是它的主人——每一分钱都在滋养你的生活、成长与热爱，而不是在冲动挥霍。",
+          "文章定位": "",
+          "参考信息": "1. https://zhuanlan.zhihu.com/p/1890524861501249040 - 简单致富：普通人实现财务自由的八个原则\n2. https://post.smzdm.com/p/a7geow49 - 过度节俭vs合理消费：哪种生活方式更值得提倡？\n3. https://www.douyin.com/search/%E5%A6%82%E4%BD%95%E9%81%BF%E5%85%8D%E9%99%B7%E5%85%A5%E6%B6%88%E8%B4%B9%E4%B8%BB%E4%B9%89%E9%99%B7%E9%98%B1 - 如何避免陷入消费主义陷阱",
+          "来源": "人工",
+          " 状态": "创作完成"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "日期": "2026-1-26",
+          "对标信息": "https://mp.weixin.qq.com/s/yzpW2R2HbwQ4bR4F8FnAqA",
+          "文章分析": "### 核心内容摘要\n\n文章介绍了中央巡察组深入农村开展工作的具体职责与意义，旨在为农民权益“撑腰”。巡察组主要聚焦四大任务：一是确保国家惠农政策（如补贴）真正落地，不被截留或挪用；二是严查侵占集体资产、工程暗箱操作等“微腐败”行为；三是考察村支书与党支部是否廉洁、担当，能否有效服务村民；四是紧盯问题整改，确保反映的问题得到实质性解决。文章还向农民提供了维权指南，包括保存证据、通过正规渠道（如“码上举报”）反映问题，并强调巡察组会保护举报人，鼓励农民大胆维护自身合法权益。\n\n### 文中金句\n\n- 这巡察组，就是咱农民的“撑腰人”，他们进村，就盯4件事，每一件都和咱的日子息息相关。\n- 不管是补贴款发没发到位、集体资产被谁占了、村里工程有没有暗箱操作，甚至村干部借着办事吃拿卡要，这些“微腐败”，巡察组都要查。\n- 现在巡察组沉到村里，把监督的“探头”架到家门口，就是要让那些歪风邪气无处藏身，让咱老百姓的腰杆硬起来。",
+          "文章定位": "",
+          "参考信息": "1. 强化对村巡察促进解决基层问题和群众身边问题——中央巡视工作（https://www.ccdi.gov.cn/toutiaon/202601/t20260122_471210_m.html）\n2. 明确对村巡察工作监督重点：聚焦农村群众身边不正之风和腐败问题（https://www.sohu.com/a/979153319_115362）\n3. 中共高坪镇委员会关于巡察整改进展情况的通报（http://www.liuyang.gov.cn/lyszf/tzgg/202601/t20260112_12224989.html）\n4. 深化监督整治守好村集体“钱袋子”（http://xfj.baoji.gov.cn/col5669/col4012/202511/t20251128_1230384.html）\n5. 中央一号文件：维护农民权益适度放活宅基地和农民房屋使用权（http://www.jiangmen.gov.cn/bmpd/jmszrzyj/zcwj/zcjd/content/post_887133.html）",
+          "来源": "人工",
+          " 状态": "已审核"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "转化为网页格式": [
+      {
+        "json": {
+          "htmlContent": "\n<div style=\"font-family: 'Microsoft YaHei', sans-serif; line-height: 1.8; padding: 0 16px; margin: 0 auto; max-width: 800px;\">\n<h3 style=\"margin-top: 24px; margin-bottom: 16px; font-size: 20px; color: #800000; font-weight: bold;\"> 巡察组来了，盯的就是这四件事</h3><p style=\"margin-top: 0; margin-bottom: 16px; color: #555;\">《图片》</p><p style=\"margin-top: 0; margin-bottom: 16px; color: #555;\">你看，最近村里是不是热闹了点？不是来了什么大领导，是中央的巡察组沉下来了。说白了，这巡察组，就是咱农民的“撑腰人”。他们进村，就盯4件事，每一件都和咱的日子息息相关，不是来走过场的。你想想，以前有些政策，上头说得挺好，到咱手里怎么就“瘦了”一圈？巡察组第一个任务，就是检查这些惠农政策，比如种粮补贴、农机购置补贴，是不是真的一分不少、一天不晚地发到咱手里了。这就好比，国家给咱寄了个大包裹，巡察组就是来查快递有没有被半路拆包、偷拿东西的。</p><h3 style=\"margin-top: 24px; margin-bottom: 16px; font-size: 20px; color: #800000; font-weight: bold;\"> 专治“微腐败”，让歪风无处藏</h3><p style=\"margin-top: 0; margin-bottom: 16px; color: #555;\">《图片》</p><p style=\"margin-top: 0; margin-bottom: 16px; color: #555;\">第二件事，更关键，专治那些让你憋屈又不敢说的“微腐败”。不管是补贴款发没发到位、集体资产被谁占了、村里修路盖房有没有暗箱操作，甚至村干部借着办事吃拿卡要、优亲厚友，这些事，巡察组都要查。你别看事儿小，但就像田里的杂草，不除干净，庄稼就长不好。巡察组现在用的方法也接地气，叫什么“田野巡察”，直接到田埂上、院子里跟你唠，还有“巡察早市”、“板凳夜话”，就是怕你不敢去办公室说。这就像把监督的“探头”直接架到了咱家门口，让那些歪风邪气无处藏身。</p><h3 style=\"margin-top: 24px; margin-bottom: 16px; font-size: 20px; color: #800000; font-weight: bold;\"> 村支书行不行，这次要见真章</h3><p style=\"margin-top: 0; margin-bottom: 16px; color: #555;\">《图片》</p><p style=\"margin-top: 0; margin-bottom: 16px; color: #555;\">第三件事，是看村里的“领头羊”到底行不行。巡察组要考察村支书和党支部，是不是真廉洁、真担当，能不能真心实意为村民服务。这不是光听他们汇报，而是看实际。比如，村里的大事小情，是党支部带着大家干，还是几个村干部自己说了算？集体资产的管理账目清不清楚？遇到难事，他们是往上推，还是真想办法解决？这就像给村里的领导班子做一次全面“体检”，心脏（核心领导）强不强，手脚（执行能力）利不利索，都得查明白。一个不担当、不干净的班子，就是村子发展的最大绊脚石。</p><h3 style=\"margin-top: 24px; margin-bottom: 16px; font-size: 20px; color: #800000; font-weight: bold;\"> 问题必须改，整改要让你看得见</h3><p style=\"margin-top: 0; margin-bottom: 16px; color: #555;\">《图片》</p><p style=\"margin-top: 0; margin-bottom: 16px; color: #555;\">最后，也是最实在的一点：巡察组不光要查问题，更要盯整改。他们不是查完、记完、拍拍屁股就走人。他们会盯着，确保查出来的每件事都有回音、有着落。比如，查出来集体鱼塘被个人长期低价承包了，那好，接下来怎么重新公开招标、挽回损失，巡察组会盯着流程。而且，很多地方还会建立整改公开机制，让咱们老百姓也能参与评估整改得到底好不好。这就避免了“雷声大、雨点小”，或者“口头整改、实际不动”的老毛病。说白了，巡察的最终目的，是让咱老百姓的腰杆真正硬起来，看到实实在在的变化。</p></div>"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "输出标题摘要": [
+      {
+        "json": {
+          "output": "{\n  \"Title\": \"中央巡察组进村，专查这4件事！你的补贴款、村里的账，这次有人撑腰了\",\n  \"Summary\": \"巡察组进村，专盯惠农补贴是否被克扣、村官有无“微腐败”、班子是否真担当、问题整改是否到位。他们用“板凳夜话”听你心声，把监督探头架到你家门口。这次，你的腰杆能硬起来吗？\"\n}"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "素材补充": [
+      {
+        "json": {
+          "output": {
+            "结果摘要": "根据搜索结果，中央巡察组深入农村开展工作的核心内容主要包括：\n\n1. **政策落实监督**：巡察组重点检查惠农政策是否真正落实到位，防止政策“打折扣”，确保党中央关于“三农”工作的决策部署在农村落地见效【1】【2】。\n\n2. **微腐败整治**：严查侵占集体资产、工程暗箱操作等“微腐败”问题，重点关注强农惠农富农补贴资金发放、农村集体资金资产资源管理等重点领域廉洁风险【1】【2】。\n\n3. **村党组织建设**：考察村支书及党支部是否廉洁、担当，能否有效服务村民，重点关注村党组织政治功能和组织功能发挥情况【1】【2】。\n\n4. **问题整改落实**：紧盯问题整改，确保反映的问题得到实质性解决，建立整改公开机制，让群众参与整改评估【1】【2】。\n\n5. **创新工作方法**：巡察组采用“田野巡察”等方式，深入田间地头，通过“巡察早市”、“板凳夜话”等形式与群众直接交流，拓宽收集村情民意渠道【2】。",
+            "来源": "1. 中央重磅部署！农村巡察专治腐败！重点村严查，谁都跑不了！ - 网易（https://www.163.com/dy/article/KKFKFTGJ0556BP5Y.html）\n2. 深度调研| 田野巡察：对村巡察的积极探索 - 求是网（https://www.qstheory.cn/20260115/b9d649b8b5d343ceba37d3b2a579e099/c.html）\n3. 明确对村巡察工作监督重点：聚焦农村群众身边不正之风和腐败问题 - 每日经济新闻（https://www.nbd.com.cn/articles/2026-01-23/4232098.html）\n4. 强化对村巡察促进解决基层问题和群众身边问题——中央巡视工作领导小组办公室负责人答记者问 - 中央纪委国家监委网站（https://www.ccdi.gov.cn/toutiaon/202601/t20260122_471210_m.html）"
+          }
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "文章创作": [
+      {
+        "json": {
+          "output": "{\n    \"new_title\": \"巡察组进村，农民腰杆硬了\",\n    \"new_content\": \"### 巡察组来了，盯的就是这四件事\\n\\n《图片》\\n\\n你看，最近村里是不是热闹了点？不是来了什么大领导，是中央的巡察组沉下来了。说白了，这巡察组，就是咱农民的“撑腰人”。他们进村，就盯4件事，每一件都和咱的日子息息相关，不是来走过场的。你想想，以前有些政策，上头说得挺好，到咱手里怎么就“瘦了”一圈？巡察组第一个任务，就是检查这些惠农政策，比如种粮补贴、农机购置补贴，是不是真的一分不少、一天不晚地发到咱手里了。这就好比，国家给咱寄了个大包裹，巡察组就是来查快递有没有被半路拆包、偷拿东西的。\\n\\n### 专治“微腐败”，让歪风无处藏\\n\\n《图片》\\n\\n第二件事，更关键，专治那些让你憋屈又不敢说的“微腐败”。不管是补贴款发没发到位、集体资产被谁占了、村里修路盖房有没有暗箱操作，甚至村干部借着办事吃拿卡要、优亲厚友，这些事，巡察组都要查。你别看事儿小，但就像田里的杂草，不除干净，庄稼就长不好。巡察组现在用的方法也接地气，叫什么“田野巡察”，直接到田埂上、院子里跟你唠，还有“巡察早市”、“板凳夜话”，就是怕你不敢去办公室说。这就像把监督的“探头”直接架到了咱家门口，让那些歪风邪气无处藏身。\\n\\n### 村支书行不行，这次要见真章\\n\\n《图片》\\n\\n第三件事，是看村里的“领头羊”到底行不行。巡察组要考察村支书和党支部，是不是真廉洁、真担当，能不能真心实意为村民服务。这不是光听他们汇报，而是看实际。比如，村里的大事小情，是党支部带着大家干，还是几个村干部自己说了算？集体资产的管理账目清不清楚？遇到难事，他们是往上推，还是真想办法解决？这就像给村里的领导班子做一次全面“体检”，心脏（核心领导）强不强，手脚（执行能力）利不利索，都得查明白。一个不担当、不干净的班子，就是村子发展的最大绊脚石。\\n\\n### 问题必须改，整改要让你看得见\\n\\n《图片》\\n\\n最后，也是最实在的一点：巡察组不光要查问题，更要盯整改。他们不是查完、记完、拍拍屁股就走人。他们会盯着，确保查出来的每件事都有回音、有着落。比如，查出来集体鱼塘被个人长期低价承包了，那好，接下来怎么重新公开招标、挽回损失，巡察组会盯着流程。而且，很多地方还会建立整改公开机制，让咱们老百姓也能参与评估整改得到底好不好。这就避免了“雷声大、雨点小”，或者“口头整改、实际不动”的老毛病。说白了，巡察的最终目的，是让咱老百姓的腰杆真正硬起来，看到实实在在的变化。\",\n    \"new_img_prompt\": [\n        \"A group of farmers in simple work clothes gathered in a village courtyard, listening intently to officials in casual attire, morning sunlight filtering through trees, atmosphere of earnest conversation and hope, shot from a low angle to emphasize the farmers' perspective, documentary photography style, natural light, slightly grainy texture.\",\n        \"A close-up shot of a weathered farmer's hand pointing at a ledger on a wooden table in a field, another hand (of an inspector) taking notes, background is blurry farmland, golden hour light, mood of scrutiny and uncovering truth, cinematic photography style, shallow depth of field.\",\n        \"A village party branch meeting scene, a map of the village projected on a wall, inspector observing from the side, focus on the body language and expressions of the village cadres, indoor with fluorescent light, atmosphere of assessment and tension, shot from an observer's angle, realistic photo style.\",\n        \"A public bulletin board in a village, with a new, clear notice about rectification measures posted, a few villagers reading it, afternoon sun casting long shadows, mood of transparency and quiet satisfaction, wide-angle shot to include the board and the villagers, street photography style.\"\n    ]\n}"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "提取标题、内容、图片提示词1": [
+      {
+        "json": {
+          "newTitle": "中央巡察组进村，专查这4件事！你的补贴款、村里的账，这次有人撑腰了",
+          "new_content": "### 巡察组来了，盯的就是这四件事\n\n《图片》\n\n你看，最近村里是不是热闹了点？不是来了什么大领导，是中央的巡察组沉下来了。说白了，这巡察组，就是咱农民的“撑腰人”。他们进村，就盯4件事，每一件都和咱的日子息息相关，不是来走过场的。你想想，以前有些政策，上头说得挺好，到咱手里怎么就“瘦了”一圈？巡察组第一个任务，就是检查这些惠农政策，比如种粮补贴、农机购置补贴，是不是真的一分不少、一天不晚地发到咱手里了。这就好比，国家给咱寄了个大包裹，巡察组就是来查快递有没有被半路拆包、偷拿东西的。\n\n### 专治“微腐败”，让歪风无处藏\n\n《图片》\n\n第二件事，更关键，专治那些让你憋屈又不敢说的“微腐败”。不管是补贴款发没发到位、集体资产被谁占了、村里修路盖房有没有暗箱操作，甚至村干部借着办事吃拿卡要、优亲厚友，这些事，巡察组都要查。你别看事儿小，但就像田里的杂草，不除干净，庄稼就长不好。巡察组现在用的方法也接地气，叫什么“田野巡察”，直接到田埂上、院子里跟你唠，还有“巡察早市”、“板凳夜话”，就是怕你不敢去办公室说。这就像把监督的“探头”直接架到了咱家门口，让那些歪风邪气无处藏身。\n\n### 村支书行不行，这次要见真章\n\n《图片》\n\n第三件事，是看村里的“领头羊”到底行不行。巡察组要考察村支书和党支部，是不是真廉洁、真担当，能不能真心实意为村民服务。这不是光听他们汇报，而是看实际。比如，村里的大事小情，是党支部带着大家干，还是几个村干部自己说了算？集体资产的管理账目清不清楚？遇到难事，他们是往上推，还是真想办法解决？这就像给村里的领导班子做一次全面“体检”，心脏（核心领导）强不强，手脚（执行能力）利不利索，都得查明白。一个不担当、不干净的班子，就是村子发展的最大绊脚石。\n\n### 问题必须改，整改要让你看得见\n\n《图片》\n\n最后，也是最实在的一点：巡察组不光要查问题，更要盯整改。他们不是查完、记完、拍拍屁股就走人。他们会盯着，确保查出来的每件事都有回音、有着落。比如，查出来集体鱼塘被个人长期低价承包了，那好，接下来怎么重新公开招标、挽回损失，巡察组会盯着流程。而且，很多地方还会建立整改公开机制，让咱们老百姓也能参与评估整改得到底好不好。这就避免了“雷声大、雨点小”，或者“口头整改、实际不动”的老毛病。说白了，巡察的最终目的，是让咱老百姓的腰杆真正硬起来，看到实实在在的变化。",
+          "new_img_prompt": [
+            "A group of farmers in simple work clothes gathered in a village courtyard, listening intently to officials in casual attire, morning sunlight filtering through trees, atmosphere of earnest conversation and hope, shot from a low angle to emphasize the farmers' perspective, documentary photography style, natural light, slightly grainy texture.",
+            "A close-up shot of a weathered farmer's hand pointing at a ledger on a wooden table in a field, another hand (of an inspector) taking notes, background is blurry farmland, golden hour light, mood of scrutiny and uncovering truth, cinematic photography style, shallow depth of field.",
+            "A village party branch meeting scene, a map of the village projected on a wall, inspector observing from the side, focus on the body language and expressions of the village cadres, indoor with fluorescent light, atmosphere of assessment and tension, shot from an observer's angle, realistic photo style.",
+            "A public bulletin board in a village, with a new, clear notice about rectification measures posted, a few villagers reading it, afternoon sun casting long shadows, mood of transparency and quiet satisfaction, wide-angle shot to include the board and the villagers, street photography style."
+          ],
+          "summary": "巡察组进村，专盯惠农补贴是否被克扣、村官有无“微腐败”、班子是否真担当、问题整改是否到位。他们用“板凳夜话”听你心声，把监督探头架到你家门口。这次，你的腰杆能硬起来吗？"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "Edit Fields": [
+      {
+        "json": {
+          "WechatAppid": "wxea18c58bc4d0baf5",
+          "wechatSercetId": "0d8572edf8fa28a5c09ba38bf9905f26"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "更新参考信息": [
+      {
+        "json": {
+          "对标信息": "https://mp.weixin.qq.com/s/yzpW2R2HbwQ4bR4F8FnAqA",
+          "参考信息": "1. 中央重磅部署！农村巡察专治腐败！重点村严查，谁都跑不了！ - 网易（https://www.163.com/dy/article/KKFKFTGJ0556BP5Y.html）\n2. 深度调研| 田野巡察：对村巡察的积极探索 - 求是网（https://www.qstheory.cn/20260115/b9d649b8b5d343ceba37d3b2a579e099/c.html）\n3. 明确对村巡察工作监督重点：聚焦农村群众身边不正之风和腐败问题 - 每日经济新闻（https://www.nbd.com.cn/articles/2026-01-23/4232098.html）\n4. 强化对村巡察促进解决基层问题和群众身边问题——中央巡视工作领导小组办公室负责人答记者问 - 中央纪委国家监委网站（https://www.ccdi.gov.cn/toutiaon/202601/t20260122_471210_m.html）"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "生成封面": [
+      {
+        "json": {
+          "model": "doubao-seedream-4-0-250828",
+          "created": 1769707946,
+          "data": [
+            {
+              "url": "https://ark-content-generation-v2-cn-beijing.tos-cn-beijing.volces.com/doubao-seedream-4-0/021769707933586ec7c419e696e48af9ca70b0dd67f0207c7c41f_0.jpeg?X-Tos-Algorithm=TOS4-HMAC-SHA256&X-Tos-Credential=AKLTYWJkZTExNjA1ZDUyNDc3YzhjNTM5OGIyNjBhNDcyOTQ%2F20260129%2Fcn-beijing%2Ftos%2Frequest&X-Tos-Date=20260129T173226Z&X-Tos-Expires=86400&X-Tos-Signature=c8adf027a33b8cffe37d516a56ae796a6e11e6aa28ad2fb96e9fe75576f1cd12&X-Tos-SignedHeaders=host",
+              "size": "1664x928"
+            }
+          ],
+          "usage": {
+            "generated_images": 1,
+            "output_tokens": 6032,
+            "total_tokens": 6032
+          }
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "获取图片二进制": [
+      {
+        "json": {
+          "model": "doubao-seedream-4-0-250828",
+          "created": 1769707946,
+          "data": [
+            {
+              "url": "https://ark-content-generation-v2-cn-beijing.tos-cn-beijing.volces.com/doubao-seedream-4-0/021769707933586ec7c419e696e48af9ca70b0dd67f0207c7c41f_0.jpeg?X-Tos-Algorithm=TOS4-HMAC-SHA256&X-Tos-Credential=AKLTYWJkZTExNjA1ZDUyNDc3YzhjNTM5OGIyNjBhNDcyOTQ%2F20260129%2Fcn-beijing%2Ftos%2Frequest&X-Tos-Date=20260129T173226Z&X-Tos-Expires=86400&X-Tos-Signature=c8adf027a33b8cffe37d516a56ae796a6e11e6aa28ad2fb96e9fe75576f1cd12&X-Tos-SignedHeaders=host",
+              "size": "1664x928"
+            }
+          ],
+          "usage": {
+            "generated_images": 1,
+            "output_tokens": 6032,
+            "total_tokens": 6032
+          }
+        },
+        "binary": {
+          "data1": {
+            "mimeType": "image/jpeg",
+            "fileType": "image",
+            "fileExtension": "jpeg",
+            "data": "filesystem-v2",
+            "directory": "https://ark-content-generation-v2-cn-beijing.tos-cn-beijing.volces.com/doubao-seedream-4-0/021769707933586ec7c419e696e48af9ca70b0dd67f0207c7c41f_0.jpeg?X-Tos-Algorithm=TOS4-HMAC-SHA256&X-Tos-Credential=AKLTYWJkZTExNjA1ZDUyNDc3YzhjNTM5OGIyNjBhNDcyOTQ%2F20260129%2Fcn-beijing%2Ftos%2Frequest&X-Tos-Date=20260129T173226Z&X-Tos-Expires=86400&X-Tos-Signature=c8adf027a33b8cffe37d516a56ae796a6e11e6aa28ad2fb96e9fe75576f1cd12&X-Tos-SignedHeaders=host",
+            "fileName": "021769707933586ec7c419e696e48af9ca70b0dd67f0207c7c41f_0.jpeg",
+            "id": "filesystem-v2:workflows/pxLHOBEZF6Uw7r9Z/executions/1499/binary_data/2b1ba606-f6aa-4b1a-b8ac-e0f88784a576",
+            "fileSize": "548 kB"
+          }
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "获取access token": [
+      {
+        "json": {
+          "access_token": "100_TC8F2cG4nQ_cH2QZUejRdQSvlWouHWCb2DZJqH7OxLTcw0w7m1z2--XzZfkbUP2quZt411G7zQjOcK4OkdWQYhMQDsO4refWG9ba2nPqCUVsLofKs44qMZ0tUuEHMMgADAZEE",
+          "expires_in": 7200
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "上传封面图片": [
+      {
+        "json": {
+          "data": "{\"media_id\":\"BfpQJfJQY9Z5YH66d8a_p411gYHqAe8pCEgwNV3Lm_Zbs2paQXdLlIINtB8d_Fon\",\"url\":\"http:\\/\\/mmbiz.qpic.cn\\/mmbiz_jpg\\/AjFaowTHdEe33G0HOYJcp9YWsibNgRYOIMVUecvfTc2KRRgSaB0spHzzL8LTfm4qb1Uuet2Zlue2nVMz5Zt3aWQ\\/0?wx_fmt=jpeg\",\"item\":[]}"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "梳理文章核心内容和金句": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets Trigger": {
+      "main": [
+        [
+          {
+            "node": "是否审核",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "梳理文章核心内容和金句",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "文章创作",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "转化为网页格式": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "生成封面": {
+      "main": [
+        [
+          {
+            "node": "获取图片二进制",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "提取图片提示词": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "生成章节图片",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "构建入参格式",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "生成章节图片": {
+      "main": [
+        [
+          {
+            "node": "获取图片二进制1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "输出标题摘要",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "输出标题摘要": {
+      "main": [
+        [
+          {
+            "node": "提取标题、内容、图片提示词1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "是否审核": {
+      "main": [
+        [
+          {
+            "node": "审核中",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "获取文章信息": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "更新文章分析",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "素材补充",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "更新文章分析": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "素材补充",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search in Tavily": {
+      "ai_tool": [
+        [
+          {
+            "node": "素材补充",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "上传到公众号草稿箱": {
+      "main": [
+        [
+          {
+            "node": "更新状态",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "素材补充": {
+      "main": [
+        [
+          {
+            "node": "更新参考信息",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "文章创作": {
+      "main": [
+        [
+          {
+            "node": "输出标题摘要",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "提取标题、内容、图片提示词1": {
+      "main": [
+        [
+          {
+            "node": "转化为网页格式",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "上传封面图片": {
+      "main": [
+        [
+          {
+            "node": "拆分media_id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "获取图片二进制": {
+      "main": [
+        [
+          {
+            "node": "上传封面图片",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "获取access token": {
+      "main": [
+        [
+          {
+            "node": "生成封面",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "获取access token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "拆分media_id": {
+      "main": [
+        [
+          {
+            "node": "提取图片提示词",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "上传章节图": {
+      "main": [
+        [
+          {
+            "node": "拆分URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "获取图片二进制1": {
+      "main": [
+        [
+          {
+            "node": "上传章节图",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "拆分URL": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "素材补充",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "更新参考信息": {
+      "main": [
+        [
+          {
+            "node": "文章创作",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "梳理文章核心内容和金句",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields2": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "审核中": {
+      "main": [
+        [
+          {
+            "node": "人工选题",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "人工选题": {
+      "main": [
+        [
+          {
+            "node": "获取文章信息",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "构建入参格式": {
+      "main": [
+        [
+          {
+            "node": "上传到公众号草稿箱",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "686a25bc-ce6e-4800-ad91-872aff6c48be",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4ec3133c8d628113a824c66a73c5bdda7b94b0762c5189e937dc7ec53c5a43ee"
+  },
+  "id": "pxLHOBEZF6Uw7r9Z",
+  "tags": []
+}

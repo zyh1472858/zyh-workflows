@@ -1,0 +1,1664 @@
+{
+  "name": "实战12-1.公众号关键词号监控-google",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                1
+              ],
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -976,
+        -64
+      ],
+      "id": "77f87207-0e78-4c33-8d06-160a5c2b671e",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.dajiala.com/fbmain/monitor/v3/web_search",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "keyword",
+              "value": "={{ $json['关键词'] }}"
+            },
+            {
+              "name": "sort_type",
+              "value": "2"
+            },
+            {
+              "name": "publish_time_type",
+              "value": "2"
+            },
+            {
+              "name": "key",
+              "value": "={{ $('apikey配置').item.json['极致了APKey'] }}"
+            },
+            {
+              "name": "verifycode"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -272,
+        -64
+      ],
+      "id": "f807cf0e-7a7d-4d10-84ff-7df4ccf19df5",
+      "name": "微信搜一搜查询"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        -64
+      ],
+      "id": "9eeb5c3c-bc44-4f55-9a30-acd38f0a1de1",
+      "name": "Split Out1"
+    },
+    {
+      "parameters": {
+        "url": "https://www.dajiala.com/fbmain/monitor/v3/article_detail",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "url",
+              "value": "={{ $json.items[0].doc_url }}"
+            },
+            {
+              "name": "mode",
+              "value": "2"
+            },
+            {
+              "name": "key",
+              "value": "={{ $('apikey配置').item.json['极致了APKey'] }}"
+            },
+            {
+              "name": "verifycode"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        528,
+        -80
+      ],
+      "id": "da1760cb-3372-4a82-babb-d00b8bb21c87",
+      "name": "获取全文和数据"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        -432,
+        416
+      ],
+      "id": "5914e934-5cec-4e67-8a6e-f24ca7b574f3",
+      "name": "DeepSeek Chat Model",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "w2l1BwFih5cyUWGb",
+          "name": "DeepSeek account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "14o3S1xRCvGotZwU48Fp0C8JGpE5SIFsau7r2xfpD1Ck",
+          "mode": "list",
+          "cachedResultName": "自媒体选题库",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14o3S1xRCvGotZwU48Fp0C8JGpE5SIFsau7r2xfpD1Ck/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1528691632,
+          "mode": "list",
+          "cachedResultName": "赛道关键词监控",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14o3S1xRCvGotZwU48Fp0C8JGpE5SIFsau7r2xfpD1Ck/edit#gid=1528691632"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "是否监控",
+              "lookupValue": "是"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -512,
+        -64
+      ],
+      "id": "73537928-0a01-425c-8ba5-f59e2cf37d2b",
+      "name": "读取关键词",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "dxI5BRk9GOM26ffW",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.dajiala.com/fbmain/monitor/v3/read_zan_pro",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"url\": \"{{ $json.url }}\",\n  \"key\": \"{{ $('apikey配置').item.json['极致了APKey'] }}\", \n  \"verifycode\": \"\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        768,
+        -80
+      ],
+      "id": "58832da4-6bd9-4ffa-80cb-8d03cc68f307",
+      "name": "数据分析"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=标题:{{ $('获取全文和数据').item.json.title }}\n作者:{{ $('获取全文和数据').item.json.nick_name }}\n内容:{{ $('获取全文和数据').item.json.content }}\n阅读数{{ $json.data.read }}\n在看数{{ $json.data.looking }}\n分享数{{ $json.data.share_num }}\n点赞数{{ $json.data.zan }}\n收藏数{{ $json.data.collect_num }}\n评论数{{ $json.data.comment_count }}",
+        "options": {
+          "systemMessage": "你现在是一名资深的公众号选题拆解分析师，擅长从单篇文章中快速提炼选题逻辑。\n\n系统会提供给你以下信息（可能不完全，但会尽量包含）：\n\n文章标题\n\n公众号名称\n\n发布日期\n\n文章正文内容或摘要（可能是截取的一部分）\n\n如果有：阅读量、点赞数、在看数等基础数据\n\n你的任务是：\n在不复读原文的前提下，用尽量精炼的语言，拆解这一篇文章的选题，并按照下面的固定文本格式输出。\n\n要求：\n\n输出必须是纯文本，不要使用任何 JSON、HTML、Markdown 语法。\n\n严格保留每一行的字段名和顺序，只替换冒号后面的内容。\n\n如果信息缺失，就用“未知”或“未提供”简要填充，不要省略字段。\n\n请按照以下模板输出（不要增加或删减行）：\n\n核心主题： （这篇文章围绕什么具体话题或问题展开？尽量具体到一个场景或问题）\n目标人群： （这篇文章主要写给谁看？职业/阶段/处境）\n\n选题类型： （如：实用教程 / 经验复盘 / 故事案例 / 观点评论 / 清单合集 / 行业观察 等）\n内容结构： （用 1 句话概括文章大致结构，例如：问题—原因—方法—案例—总结）\n\n四选法则定位：\n\n你最深（专业/经验）：（作者展示了哪些专业知识或独特经验？如果没有就写“弱”或“几乎没有”）\n\n情绪触点：（主要利用了哪些情绪？如焦虑、恐惧、愧疚、爽感、希望、安全感等）\n\n热点事件：（是否绑定了某个社会/行业/平台/节日热点？如有请写出名称和关联方式）\n\n痛点需求：（文章试图解决读者什么具体痛点？时间/金钱/能力/关系/情绪中的哪一类？）\n\n标题策略： （标题用了哪些技巧？如数字、对比、悬念、“如果你还…就…” 等）\n关键词： （从标题和正文里提炼 3–7 个高频或关键关键词，用顿号分隔）\n\n优势亮点： （从选题角度，这篇文章最值得学习的 1–3 个点）\n主要不足： （从选题或切题角度看，有哪些可改进之处？）\n\n一句话选题总结： （用 1 句简洁的话概括：这是一篇「面向谁」的「解决什么问题」的文章）\n\n请直接输出以上模板填好的内容，不要添加任何额外说明或点评"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -416,
+        208
+      ],
+      "id": "c6464f74-b102-47eb-8694-b1864f66228d",
+      "name": "文章内容总结 "
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "adcbe0ca-7d7f-4618-a5dc-a8a6fc020fbb",
+              "leftValue": "={{ $json.data.read }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "33573373-8454-444a-be37-bd5891d75d4d",
+              "leftValue": "={{ $json.data.zan }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -720,
+        192
+      ],
+      "id": "056bfc21-6a2c-470f-8360-bd84df4a71a7",
+      "name": "初步过滤"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "14o3S1xRCvGotZwU48Fp0C8JGpE5SIFsau7r2xfpD1Ck",
+          "mode": "list",
+          "cachedResultName": "自媒体选题库",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14o3S1xRCvGotZwU48Fp0C8JGpE5SIFsau7r2xfpD1Ck/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "公众号选题",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14o3S1xRCvGotZwU48Fp0C8JGpE5SIFsau7r2xfpD1Ck/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "日期": "{{ $json.formattedDate }}",
+            "对标信息": "{{ $('Split Out1').item.json.items[0].doc_url }}",
+            "文章分析": "{{ $('文章内容总结 ').item.json.output }}",
+            "来源": "机器",
+            " 状态": "待审核",
+            "文章原文": "={{ $('获取全文和数据').item.json.content }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "日期",
+              "displayName": "日期",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "对标信息",
+              "displayName": "对标信息",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "文章分析",
+              "displayName": "文章分析",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "文章定位",
+              "displayName": "文章定位",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "参考信息",
+              "displayName": "参考信息",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "来源",
+              "displayName": "来源",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": " 状态",
+              "displayName": " 状态",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "文章原文",
+              "displayName": "文章原文",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        496,
+        208
+      ],
+      "id": "ab6894aa-4528-42d0-8323-81ca6139306c",
+      "name": "登记选题",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "dxI5BRk9GOM26ffW",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "outputFieldName": "=currentDate",
+        "options": {
+          "timezone": "Asia/Shanghai"
+        }
+      },
+      "type": "n8n-nodes-base.dateTime",
+      "typeVersion": 2,
+      "position": [
+        0,
+        208
+      ],
+      "id": "93d9a1ec-7336-42f3-ad60-c9539116e886",
+      "name": "Date & Time"
+    },
+    {
+      "parameters": {
+        "operation": "formatDate",
+        "date": "={{ $json.currentDate }}",
+        "format": "custom",
+        "customFormat": "yyyy-MM-dd HH:mm:ss",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dateTime",
+      "typeVersion": 2,
+      "position": [
+        208,
+        208
+      ],
+      "id": "9c2dc11a-fc2b-43ae-a6f0-f4b6bca7be4d",
+      "name": "Date & Time1"
+    },
+    {
+      "parameters": {
+        "content": "# 接口费用说明\n# 1、每一个关键词，搜索一次0.5元\n# 2、建设一个关键词找到结果15条，对15篇文章进行分析费用 大概15*0.1元  总共1.5元（文章链接越多费用越多）\n# 3、一个关键词执行一次2元。 ",
+        "height": 320,
+        "width": 1792
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -864,
+        -464
+      ],
+      "typeVersion": 1,
+      "id": "ddc369dd-e1fc-4c89-9be5-481047b048c0",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "89715b26-6788-42f3-a3bd-f01fcb3c08a2",
+              "name": "极致了APKey",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -752,
+        -64
+      ],
+      "id": "04a3b820-0a6e-43f3-9ea8-5f7d0b4896cc",
+      "name": "apikey配置"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "14o3S1xRCvGotZwU48Fp0C8JGpE5SIFsau7r2xfpD1Ck",
+          "mode": "list",
+          "cachedResultName": "自媒体选题库",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14o3S1xRCvGotZwU48Fp0C8JGpE5SIFsau7r2xfpD1Ck/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "公众号选题",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14o3S1xRCvGotZwU48Fp0C8JGpE5SIFsau7r2xfpD1Ck/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "对标信息",
+              "lookupValue": "={{ $json.items[0].doc_url }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        128,
+        -64
+      ],
+      "id": "f1da74be-0679-4c4d-a15b-7b597058a041",
+      "name": "查询是否存在 ",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "dxI5BRk9GOM26ffW",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "201f7c2e-1ee6-47d4-a62c-e3114127f068",
+              "leftValue": "={{ $json['对标信息'] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notExists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "bcefe905-3b72-4f27-b517-74552025c1b8",
+              "leftValue": "={{ $json['对标信息'] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        288,
+        -64
+      ],
+      "id": "06e58fb8-76f0-4f8e-a028-6af223f520e5",
+      "name": "If"
+    }
+  ],
+  "pinData": {
+    "微信搜一搜查询": [
+      {
+        "json": {
+          "advanceSearch": {
+            "businessType": 0,
+            "filters": [
+              {
+                "column": 4,
+                "display": 1,
+                "options": [
+                  {
+                    "extReqParams": [],
+                    "paramKey": "HomePageAdvanceSortType",
+                    "paramValue": "0",
+                    "reportId": "HomePageAdvanceSortType_0:filter_option:1498260254",
+                    "title": "综合排序",
+                    "type": 1
+                  },
+                  {
+                    "extReqParams": [],
+                    "paramKey": "HomePageAdvanceSortType",
+                    "paramValue": "1",
+                    "reportId": "HomePageAdvanceSortType_1:filter_option:1135828756",
+                    "title": "最新",
+                    "type": 1
+                  },
+                  {
+                    "extReqParams": [],
+                    "paramKey": "HomePageAdvanceSortType",
+                    "paramValue": "2",
+                    "reportId": "HomePageAdvanceSortType_2:filter_option:1845088113",
+                    "selected": 1,
+                    "title": "最热",
+                    "type": 1
+                  }
+                ],
+                "paramKey": "HomePageAdvanceSortType",
+                "title": "排序",
+                "type": 1
+              },
+              {
+                "column": 4,
+                "display": 1,
+                "options": [
+                  {
+                    "extReqParams": [],
+                    "paramKey": "HomePageAdvanceSearchType",
+                    "paramValue": "0",
+                    "reportId": "HomePageAdvanceSearchType_0:filter_option:1956208279",
+                    "title": "不限",
+                    "type": 1
+                  },
+                  {
+                    "extReqParams": [],
+                    "paramKey": "HomePageAdvanceSearchType",
+                    "paramValue": "1",
+                    "reportId": "HomePageAdvanceSearchType_1:filter_option:883401556",
+                    "selected": 1,
+                    "title": "文章",
+                    "type": 1
+                  },
+                  {
+                    "extReqParams": [],
+                    "paramKey": "HomePageAdvanceSearchType",
+                    "paramValue": "2",
+                    "reportId": "HomePageAdvanceSearchType_2:filter_option:1944536793",
+                    "title": "视频",
+                    "type": 1
+                  }
+                ],
+                "paramKey": "HomePageAdvanceSearchType",
+                "title": "类型",
+                "type": 1
+              },
+              {
+                "column": 4,
+                "display": 1,
+                "options": [
+                  {
+                    "extReqParams": [],
+                    "paramKey": "HomePageAdvancePublishTime",
+                    "paramValue": "0",
+                    "reportId": "HomePageAdvancePublishTime_0:filter_option:159605635",
+                    "title": "不限",
+                    "type": 1
+                  },
+                  {
+                    "extReqParams": [],
+                    "paramKey": "HomePageAdvancePublishTime",
+                    "paramValue": "1",
+                    "reportId": "HomePageAdvancePublishTime_1:filter_option:1784219566",
+                    "title": "最近一天",
+                    "type": 1
+                  },
+                  {
+                    "extReqParams": [],
+                    "paramKey": "HomePageAdvancePublishTime",
+                    "paramValue": "2",
+                    "reportId": "HomePageAdvancePublishTime_2:filter_option:1137398010",
+                    "selected": 1,
+                    "title": "最近七天",
+                    "type": 1
+                  },
+                  {
+                    "extReqParams": [],
+                    "paramKey": "HomePageAdvancePublishTime",
+                    "paramValue": "3",
+                    "reportId": "HomePageAdvancePublishTime_3:filter_option:433127431",
+                    "title": "最近半年",
+                    "type": 1
+                  }
+                ],
+                "paramKey": "HomePageAdvancePublishTime",
+                "title": "时间",
+                "type": 1
+              },
+              {
+                "column": 4,
+                "display": 1,
+                "options": [
+                  {
+                    "extReqParams": [],
+                    "paramKey": "HomePageAdvanceSearchScope",
+                    "paramValue": "0",
+                    "reportId": "HomePageAdvanceSearchScope_0:filter_option:2119059977",
+                    "selected": 1,
+                    "title": "不限",
+                    "type": 1
+                  },
+                  {
+                    "extReqParams": [],
+                    "paramKey": "HomePageAdvanceSearchScope",
+                    "paramValue": "1",
+                    "reportId": "HomePageAdvanceSearchScope_1:filter_option:493161156",
+                    "title": "已关注",
+                    "type": 1
+                  },
+                  {
+                    "extReqParams": [],
+                    "paramKey": "HomePageAdvanceSearchScope",
+                    "paramValue": "2",
+                    "reportId": "HomePageAdvanceSearchScope_2:filter_option:216112614",
+                    "title": "最近看过",
+                    "type": 1
+                  },
+                  {
+                    "extReqParams": [],
+                    "paramKey": "HomePageAdvanceSearchScope",
+                    "paramValue": "3",
+                    "reportId": "HomePageAdvanceSearchScope_3:filter_option:1532978131",
+                    "title": "朋友赞过",
+                    "type": 1
+                  }
+                ],
+                "paramKey": "HomePageAdvanceSearchScope",
+                "title": "范围",
+                "type": 1
+              }
+            ],
+            "isHold": 1,
+            "rules": "[{\"condition\":[{\"paramKey\":\"HomePageAdvanceSearchType\",\"paramValue\":\"1\"}],\"disabled\":[{\"paramKey\":\"HomePageAdvanceSearchScope\",\"paramValue\":\"3\"}]},{\"condition\":[{\"paramKey\":\"HomePageAdvanceSearchScope\",\"paramValue\":\"3\"}],\"disabled\":[{\"paramKey\":\"HomePageAdvanceSearchType\",\"paramValue\":\"0\"},{\"paramKey\":\"HomePageAdvanceSearchType\",\"paramValue\":\"1\"}],\"selected\":[{\"paramKey\":\"HomePageAdvanceSearchType\",\"paramValue\":\"2\"}]},{\"condition\":[{\"paramKey\":\"HomePageAdvanceSearchType\",\"paramValue\":\"2\"}],\"disabled\":[{\"paramKey\":\"HomePageAdvanceSearchScope\",\"paramValue\":\"8\"},{\"paramKey\":\"HomePageAdvanceSearchScope\",\"paramValue\":\"9\"}]},{\"condition\":[{\"paramKey\":\"HomePageAdvanceSearchScope\",\"paramValue\":\"9\"}],\"disabled\":[{\"paramKey\":\"HomePageAdvanceSearchType\",\"paramValue\":\"0\"},{\"paramKey\":\"HomePageAdvanceSearchType\",\"paramValue\":\"2\"}],\"selected\":[{\"paramKey\":\"HomePageAdvanceSearchType\",\"paramValue\":\"1\"}]},{\"condition\":[{\"paramKey\":\"HomePageAdvanceSearchScope\",\"paramValue\":\"8\"}],\"disabled\":[{\"paramKey\":\"HomePageAdvanceSearchType\",\"paramValue\":\"0\"},{\"paramKey\":\"HomePageAdvanceSearchType\",\"paramValue\":\"2\"}],\"selected\":[{\"paramKey\":\"HomePageAdvanceSearchType\",\"paramValue\":\"1\"}]}]",
+            "showType": 3,
+            "title": "已选择：最热、文章、最近七天"
+          },
+          "category": [
+            {
+              "selected": 1,
+              "type": 0,
+              "word": "全部"
+            },
+            {
+              "type": 2,
+              "word": "文章"
+            },
+            {
+              "type": 262208,
+              "word": "小程序"
+            },
+            {
+              "type": 7,
+              "word": "视频号"
+            },
+            {
+              "type": 1,
+              "word": "公众号"
+            },
+            {
+              "type": 8,
+              "word": "朋友圈"
+            },
+            {
+              "type": 384,
+              "word": "表情"
+            },
+            {
+              "type": 16777728,
+              "word": "百科"
+            },
+            {
+              "type": 16384,
+              "word": "新闻"
+            },
+            {
+              "type": 53,
+              "word": "AI搜索"
+            },
+            {
+              "type": 33562630,
+              "word": "划线"
+            }
+          ],
+          "continueFlag": 1,
+          "cookies": "{\"box_offset\":15,\"businessType\":2,\"cookies_buffer\":\"UssDCGIQABgAIgxuOG7lt6XkvZzmtYEyjQMweDItMC0xNDE1NDQ3OTM1Mzg5MjAxNjIyMTsweDItMC04MTc4MjAwNDQ4OTQwNzM3Mzk5OzB4Mi0wLTE4MDg4OTU2ODM0ODE0MTI3MTEzOzB4Mi0wLTE0MzIzNjUwNzk3MTM5MzY5NTE0OzB4Mi0wLTE4MjY4MzE0MDgzMTcyODQxOTA7MHgyLTAtMjE3Mzg0NTU1MzQyMjU5MTkxMzsweDItMC0xMTIxODU1Mjg4NDcwMzA1Mjg0ODsweDItMC02NjA0MjkzNDI1NzkzNzUyOTg4OzB4Mi0wLTM2ODkyOTcxNjgzMzY4MTcyMjY7MHgyLTAtODAxODUzODExOTMzMTQ4NzkzOTsweDItMC05NjI4NjA5ODkwODM5MjMxNzkxOzB4Mi0wLTExMDY0Mzk4MjgwMDExOTMyMzYxOzB4Mi0wLTUzNzgyODE1MDAxMTYyOTgyODE7MHgyLTAtMTg0NDIwMzY3NDI5ODU3MzI3ODY7MHgyLTAtMTI0Nzk0OTI5MjIyMzQzOTM2MTQ7QA9IElACWgh3eHNlYXJjaIIBAhAAsgECGACaAwpCAHIAigEAkgEA\",\"doc_offset\":18,\"dup_bf\":\"0x2-0-14154479353892016221;0x2-0-8178200448940737399;0x2-0-18088956834814127113;0x2-0-14323650797139369514;0x2-0-1826831408317284190;0x2-0-2173845553422591913;0x2-0-11218552884703052848;0x2-0-6604293425793752988;0x2-0-3689297168336817226;0x2-0-8018538119331487939;0x2-0-9628609890839231791;0x2-0-11064398280011932361;0x2-0-5378281500116298281;0x2-0-18442036742985732786;0x2-0-12479492922234393614;\",\"isHomepage\":1,\"page_cnt\":2,\"query\":\"n8n工作流\",\"scene\":98}\n",
+          "data": [
+            {
+              "boxID": "0x2-0-14154479353892016221",
+              "boxPos": 1,
+              "boxPosMerge": 1,
+              "count": 1,
+              "items": [
+                {
+                  "date": 1767312000,
+                  "desc": "<em class=\"highlight\">工作流</em>简洁高效。对于经常需要网上查资料、阅读文献的用户来说，Arc 的这套组合简直如虎添翼。缺点：作为一款新兴浏览器，Arc 当前主要面向欧美市场，国内用户使用时在本地化方面可能略有不足（如界面语言、对国产网页",
+                  "docID": "14154479353892016221",
+                  "docType": 0,
+                  "doc_url": "http://mp.weixin.qq.com/s?__biz=MzIwMTQ1MzMwNQ==&mid=2458179287&idx=1&sn=c8c0cace7abc3ecb9ec86051b1573159&chksm=807d7ab20c43f1307f227ef48bf52b2c3e2d5eb6f56b639cd087cb6f5a7dbbb0073f3eb4bf27&scene=7#rd",
+                  "itemShowType": 0,
+                  "mpScene": 7,
+                  "reportId": "14154479353892016221:mp:768136",
+                  "report_extinfo_str": "tuple%3D3201453305_2458179287_1%26show_tag%3DR_2_1_1613",
+                  "source": {
+                    "dateTime": "8小时前",
+                    "tag": [
+                      {
+                        "noBg": true,
+                        "title": "阅读 1613",
+                        "type": 2
+                      }
+                    ],
+                    "title": "数图笔记"
+                  },
+                  "src_type": 49,
+                  "thumbUrl": "https://mmbiz.qpic.cn/sz_mmbiz_jpg/WibdHHtZA7kicsSh9aPdiaUEiczItrYgE5Oia3ZGcFn7zMdH5WQDp9GRUXO94yOZru9N34zM3nR9HUicMcib0o0sicmzXQ/0?wx_fmt=jpeg",
+                  "timestamp": 1767312000,
+                  "title": "2025十佳AI工具"
+                }
+              ],
+              "real_type": 2,
+              "resultType": 0,
+              "subType": 0,
+              "totalCount": 102,
+              "type": 2
+            },
+            {
+              "boxID": "0x2-0-8178200448940737399",
+              "boxPos": 2,
+              "boxPosMerge": 2,
+              "count": 1,
+              "items": [
+                {
+                  "date": 1767001682,
+                  "desc": "于是我用 <em class=\"highlight\">n8n</em> 做了一个非常实用的<em class=\"highlight\">工作流</em>：每天自动抓取 blog rss → ai 总结 → 定时发送到邮箱 不刷博客，也能掌握趋势。2 独立站问题检测自动化（On-Page SEO Analytics）",
+                  "docID": "8178200448940737399",
+                  "docType": 0,
+                  "doc_url": "http://mp.weixin.qq.com/s?__biz=MzIzMDE5MjcwNw==&mid=2247487237&idx=1&sn=0d32cc2f51697801ba53461dfb7c692c&chksm=e9ffc7eef6e8dc7fc22f5ba3e34f4427e3243b07905e0425e1a2c42cf0ee9a7c5a6cad97b345&scene=7#rd",
+                  "itemShowType": 0,
+                  "mpScene": 7,
+                  "reportId": "8178200448940737399:mp:812524",
+                  "report_extinfo_str": "tuple%3D3230192707_2247487237_1%26show_tag%3DR_2_1_1611",
+                  "source": {
+                    "dateTime": "3天前",
+                    "tag": [
+                      {
+                        "noBg": true,
+                        "title": "阅读 1611",
+                        "type": 2
+                      }
+                    ],
+                    "title": "大卫搞跨境"
+                  },
+                  "src_type": 49,
+                  "thumbUrl": "https://mmbiz.qpic.cn/sz_mmbiz_jpg/NGibBkjlKdrAzDWEhGflmaNP3oHgRX8GWdF1q3O1lN2AS2HnUQl26nJvJ9sGOtdJW4JRmECFGFBPnT1yVxEJkxA/0?wx_fmt=jpeg",
+                  "timestamp": 1767001682,
+                  "title": "用<em class=\"highlight\">N8N</em>打造全自动化独立站获客增长系统"
+                }
+              ],
+              "real_type": 2,
+              "resultType": 0,
+              "subType": 0,
+              "totalCount": 102,
+              "type": 2
+            },
+            {
+              "boxID": "0x2-0-18088956834814127113",
+              "boxPos": 3,
+              "boxPosMerge": 3,
+              "count": 1,
+              "items": [
+                {
+                  "date": 1766745712,
+                  "desc": "<em class=\"highlight\">n8n</em> 这个开源<em class=\"highlight\">工作流</em>自动化工具，能把你从这些重复劳动中解放出来。它让你用可视化拖拽的方式，把 GitHub、Slack、数据库、API 等各种节点连接起来，自动完成数据流转与业务处理，堪称程序员版的“乐高积木”。",
+                  "docID": "18088956834814127113",
+                  "docType": 0,
+                  "doc_url": "http://mp.weixin.qq.com/s?__biz=Mzg4NzAyNzMwMw==&mid=2247489362&idx=1&sn=7d9ce54b8e48696267172534005eed15&chksm=ce175a9c547430af0818b334343b848b7218b326cf33b21d4c42e20b4d9cfe049ddda58ad1d0&scene=7#rd",
+                  "itemShowType": 0,
+                  "mpScene": 7,
+                  "reportId": "18088956834814127113:mp:324447",
+                  "report_extinfo_str": "tuple%3D3887027303_2247489362_1%26show_tag%3DR_2_1_967",
+                  "source": {
+                    "dateTime": "6天前",
+                    "tag": [
+                      {
+                        "noBg": true,
+                        "title": "阅读 967",
+                        "type": 2
+                      }
+                    ],
+                    "title": "GitHub指北"
+                  },
+                  "src_type": 49,
+                  "thumbUrl": "https://mmbiz.qpic.cn/mmbiz_jpg/hjxWRAdYLUwwjbMPcy2ZxyjdHAoJgcgGONNDm0bhVxYVlFqwxNJGRNkK4NOtfwmZScjF7kRmnoXKK3H1BQ5scA/0?wx_fmt=jpeg",
+                  "timestamp": 1766745712,
+                  "title": "165K Star，一个<em class=\"highlight\">工作流</em>自动化平台"
+                }
+              ],
+              "real_type": 2,
+              "resultType": 0,
+              "subType": 0,
+              "totalCount": 102,
+              "type": 2
+            },
+            {
+              "boxID": "0x2-0-14323650797139369514",
+              "boxPos": 4,
+              "boxPosMerge": 4,
+              "count": 1,
+              "items": [
+                {
+                  "date": 1766998959,
+                  "desc": "上周，我分享了那篇被裁后，我用<em class=\"highlight\">N8N</em>自动写公众号，比第1篇节省了3小时，很多小伙伴看了，说很感兴趣，后台私信我说：“田心，逻辑我看懂了，但实操起来全是坑啊！”",
+                  "docID": "14323650797139369514",
+                  "docType": 0,
+                  "doc_url": "http://mp.weixin.qq.com/s?__biz=MzYzMzM3MTQyNw==&mid=2247484081&idx=1&sn=69c4643a84e401e81468a7697ef2e7e4&chksm=f1ce44224808e504146d26f3e5b4bb04ca7260b6d8112544dae7895aafac201fba97ea12b741&scene=7#rd",
+                  "itemShowType": 0,
+                  "mpScene": 7,
+                  "reportId": "14323650797139369514:mp:452811",
+                  "report_extinfo_str": "tuple%3D3633371427_2247484081_1%26show_tag%3DR_2_1_458",
+                  "source": {
+                    "dateTime": "3天前",
+                    "tag": [
+                      {
+                        "noBg": true,
+                        "title": "阅读 458",
+                        "type": 2
+                      }
+                    ],
+                    "title": "田心AI"
+                  },
+                  "src_type": 49,
+                  "thumbUrl": "https://mmbiz.qpic.cn/sz_mmbiz_jpg/olPK8uwpmpfgwyy3K0fnYNWNnibGia6hpKpywWyjPrS4eZFDFIYabLU59oL6Aa3twqSyApBLuFmnzcjRR5g2icibnw/0?wx_fmt=jpeg",
+                  "timestamp": 1766998959,
+                  "title": "别再手动敲字了！全自动公众号<em class=\"highlight\">N8N工作流</em>：绕过白名单、自动插图、排版"
+                }
+              ],
+              "real_type": 2,
+              "resultType": 0,
+              "subType": 0,
+              "totalCount": 102,
+              "type": 2
+            },
+            {
+              "boxID": "0x2-0-1826831408317284190",
+              "boxPos": 5,
+              "boxPosMerge": 5,
+              "count": 1,
+              "items": [
+                {
+                  "date": 1766999374,
+                  "desc": "我参加了破局行动营-- <em class=\"highlight\">n8n</em> 自动化<em class=\"highlight\">工作流</em>实战，今天上午辛辛苦苦折腾 Docker，花了 2 小时终于把 <em class=\"highlight\">n8n</em> 装好了。刚装好<em class=\"highlight\">n8n</em>，点开“添加节点”，瞬间感觉像刘姥姥进了大观园？",
+                  "docID": "1826831408317284190",
+                  "docType": 0,
+                  "doc_url": "http://mp.weixin.qq.com/s?__biz=MzA5MzY2NzM0OA==&mid=2650373571&idx=1&sn=7d4fe30329a84330add1b3f2548273c6&chksm=897ded21b9c8000e764faa6893b0698a5b3b5e6a20af830fdd3cf9e07454828066fdc88d81b3&scene=7#rd",
+                  "itemShowType": 0,
+                  "mpScene": 7,
+                  "reportId": "1826831408317284190:mp:691537",
+                  "report_extinfo_str": "tuple%3D3093667348_2650373571_1%26show_tag%3DR_2_1_287",
+                  "source": {
+                    "dateTime": "3天前",
+                    "tag": [
+                      {
+                        "noBg": true,
+                        "title": "阅读 287",
+                        "type": 2
+                      }
+                    ],
+                    "title": "枫哥Prompter"
+                  },
+                  "src_type": 49,
+                  "thumbUrl": "https://mmbiz.qpic.cn/mmbiz_jpg/TicalQVHRRgcRibTicyEzWd5gsY0B6p1ibAoEmmopQNaOJkLib8snQu1VACDmnJUdXiabDMkdB9Op9DwOG8eHSdmDhXQ/0?wx_fmt=jpeg",
+                  "timestamp": 1766999374,
+                  "title": "<em class=\"highlight\">n8n</em> 节点几百个，真正救命的就这 7 个（附小白速查表）"
+                }
+              ],
+              "real_type": 2,
+              "resultType": 0,
+              "subType": 0,
+              "totalCount": 102,
+              "type": 2
+            },
+            {
+              "boxID": "0x2-0-2173845553422591913",
+              "boxPos": 6,
+              "boxPosMerge": 6,
+              "count": 1,
+              "items": [
+                {
+                  "date": 1766890920,
+                  "desc": "这玩意儿不是<em class=\"highlight\">n8n</em>自带的，得自己装一下，贼简单。按照如下步骤即可安装社区节点头像 >> settings >> 社区节点 >> 安装 >> 输入节点名称 >> 安装就行了搜 <em class=\"highlight\">n8n</em>-nodes-puppeteer 安装即可。",
+                  "docID": "2173845553422591913",
+                  "docType": 0,
+                  "doc_url": "http://mp.weixin.qq.com/s?__biz=MzIyNjk0NzY4Ng==&mid=2247493144&idx=1&sn=b1b3f6c82da4fe9d55d268d0d498707b&chksm=e92e2947a46759a4b7326487f090b60caf924988fc2eb14460b7c39187c32261623775a85b64&scene=7#rd",
+                  "itemShowType": 0,
+                  "mpScene": 7,
+                  "reportId": "2173845553422591913:mp:817741",
+                  "report_extinfo_str": "tuple%3D3226947686_2247493144_1%26show_tag%3DR_2_1_248",
+                  "source": {
+                    "dateTime": "5天前",
+                    "tag": [
+                      {
+                        "noBg": true,
+                        "title": "阅读 248",
+                        "type": 2
+                      }
+                    ],
+                    "title": "丛集黑科技"
+                  },
+                  "src_type": 49,
+                  "thumbUrl": "https://mmbiz.qpic.cn/mmbiz_jpg/ZmNbfrXFvSwQyCPTQWTvS5oKT28sDf3hzmvxicicRqzMWtJicO2NiacO7HibIH5gw3KPf6xIpoib8yqCicqYbFEUS0zIw/0?wx_fmt=jpeg",
+                  "timestamp": 1766890920,
+                  "title": "<em class=\"highlight\">n8n</em>实战019，拒绝手动截图！全自动网页截图<em class=\"highlight\">工作流</em>"
+                }
+              ],
+              "real_type": 2,
+              "resultType": 0,
+              "subType": 0,
+              "totalCount": 102,
+              "type": 2
+            },
+            {
+              "boxID": "0x2-0-11218552884703052848",
+              "boxPos": 7,
+              "boxPosMerge": 7,
+              "count": 1,
+              "items": [
+                {
+                  "date": 1767061502,
+                  "desc": "一个是 Chat Trigger，这玩意儿能让你直接在 <em class=\"highlight\">n8n</em> 的聊天窗口里跟它对话，测试的时候特别方便。开启允许文件上传，这样我们可以上传梗图来创作漫画。",
+                  "docID": "11218552884703052848",
+                  "docType": 0,
+                  "doc_url": "http://mp.weixin.qq.com/s?__biz=MzYzNTI2NTEyNA==&mid=2247485088&idx=1&sn=96a3f452a116feecc54cf5c621db4ef2&chksm=f1dc616f3d00d00e8b282fc1cfd61c195cf0a9f0d1e73566ad7f47cbdd2e936cd582606859a7&scene=7#rd",
+                  "itemShowType": 0,
+                  "mpScene": 7,
+                  "reportId": "11218552884703052848:mp:655952",
+                  "report_extinfo_str": "tuple%3D3635265124_2247485088_1%26show_tag%3DR_2_1_235",
+                  "source": {
+                    "dateTime": "3天前",
+                    "tag": [
+                      {
+                        "noBg": true,
+                        "title": "阅读 235",
+                        "type": 2
+                      }
+                    ],
+                    "title": "曹工不加班"
+                  },
+                  "src_type": 49,
+                  "thumbUrl": "https://mmbiz.qpic.cn/mmbiz_jpg/ia3OzCE9ggzdOwqWiaRmdHCyLrt9E3SEGIfFu0iagrLgRcmsSD9iaf7rhtk9lRCvUgnbiavhBXm9QhIicYvrQwtpxDiaQ/0?wx_fmt=jpeg",
+                  "timestamp": 1767061502,
+                  "title": "日入400！：详解 <em class=\"highlight\">n8n</em> 四格漫画自动化<em class=\"highlight\">工作流</em>搭建全过程"
+                }
+              ],
+              "real_type": 2,
+              "resultType": 0,
+              "subType": 0,
+              "totalCount": 102,
+              "type": 2
+            },
+            {
+              "boxID": "0x2-0-6604293425793752988",
+              "boxPos": 8,
+              "boxPosMerge": 8,
+              "count": 1,
+              "items": [
+                {
+                  "date": 1766982867,
+                  "desc": "我已经把这个<em class=\"highlight\">工作流</em>（包含那个关键的正则清洗代码和 Prompt）上传到了我的 <em class=\"highlight\">n8n</em> 模板搜索引擎。并且！你可以直接在浏览器里可视化预览它的节点连线，不用下载就能看懂逻辑。",
+                  "docID": "6604293425793752988",
+                  "docType": 0,
+                  "doc_url": "http://mp.weixin.qq.com/s?__biz=MzUzMTMwMjIyNA==&mid=2247484325&idx=1&sn=712903bcfaa4f4c986da531f2092041f&chksm=fbd1a389a178bb7710b4d647603aeba55d4878c68669e7ce201fcc1cc3548cea666e5a961d9b&scene=7#rd",
+                  "itemShowType": 0,
+                  "mpScene": 7,
+                  "reportId": "6604293425793752988:mp:460266",
+                  "report_extinfo_str": "tuple%3D3531302224_2247484325_1%26show_tag%3DR_2_1_230",
+                  "source": {
+                    "dateTime": "4天前",
+                    "tag": [
+                      {
+                        "noBg": true,
+                        "title": "阅读 230",
+                        "type": 2
+                      }
+                    ],
+                    "title": "用AI蜕变"
+                  },
+                  "src_type": 49,
+                  "thumbUrl": "https://mmbiz.qpic.cn/sz_mmbiz_jpg/PQ6kBhJUIkYpiaib74OARBIr0WicUvvibT9jEa5V2skVrGPplxt9siaz0PiccA286gUHge5GokwdPfUrIEEnxXRTiaXIw/0?wx_fmt=jpeg",
+                  "timestamp": 1766982867,
+                  "title": "拒绝手搓！教你用 <em class=\"highlight\">n8n</em> + AI 搭建“全自动”内容分发流水线（附 JSON 模板）"
+                }
+              ],
+              "real_type": 2,
+              "resultType": 0,
+              "subType": 0,
+              "totalCount": 102,
+              "type": 2
+            },
+            {
+              "boxID": "0x2-0-3689297168336817226",
+              "boxPos": 9,
+              "boxPosMerge": 9,
+              "count": 1,
+              "items": [
+                {
+                  "date": 1767154906,
+                  "desc": "<em class=\"highlight\">N8N工作流</em>SOP拆解好了，现在开始搭建我们的自动化流水线！1. 触发Manual Trigger：手动触发器，就是个“开始”按钮。2.配置Edit Fields（我们的参数配置中心）：这个节点就是个“参数盒子”，",
+                  "docID": "3689297168336817226",
+                  "docType": 0,
+                  "doc_url": "http://mp.weixin.qq.com/s?__biz=MzYzMzM3MTQyNw==&mid=2247484123&idx=1&sn=37fa36a7cfaafe8744d597e61c8a280b&chksm=f11ca1ccc8d9c16f4a6de64c4450f4b321578f026b32f0c640240c4b643780102bc304f13b90&scene=7#rd",
+                  "itemShowType": 0,
+                  "mpScene": 7,
+                  "reportId": "3689297168336817226:mp:142390",
+                  "report_extinfo_str": "tuple%3D3633371427_2247484123_1%26show_tag%3DR_2_1_221",
+                  "source": {
+                    "dateTime": "2天前",
+                    "tag": [
+                      {
+                        "noBg": true,
+                        "title": "阅读 221",
+                        "type": 2
+                      }
+                    ],
+                    "title": "田心AI"
+                  },
+                  "src_type": 49,
+                  "thumbUrl": "https://mmbiz.qpic.cn/sz_mmbiz_jpg/olPK8uwpmpeE0BWw5icEvB9Y6snW8yMHuI4Hj3KkTogZPhD4hzmdjV1ZLOOolLDRAEnNGI3mVFWXQqG7NMbhs6A/0?wx_fmt=jpeg",
+                  "timestamp": 1767154906,
+                  "title": "解放双手！这个<em class=\"highlight\">N8N工作流</em>，让小红书爆款选题自动化了（附源码）"
+                }
+              ],
+              "real_type": 2,
+              "resultType": 0,
+              "subType": 0,
+              "totalCount": 102,
+              "type": 2
+            },
+            {
+              "boxID": "0x2-0-8018538119331487939",
+              "boxPos": 10,
+              "boxPosMerge": 10,
+              "count": 1,
+              "items": [
+                {
+                  "date": 1766994383,
+                  "desc": "这个<em class=\"highlight\">工作流</em>的逻辑简单粗暴，咱们要把<em class=\"highlight\">n8n</em>变成一个“加工厂”：1. 接单（Form Trigger）：通过一个网页表单，让你上传文件（图片、文档都行）。2. 拆解（Extract & Code）：把文件拆成二进制数据，定义好要存到GitHub的哪个仓库、哪",
+                  "docID": "8018538119331487939",
+                  "docType": 0,
+                  "doc_url": "http://mp.weixin.qq.com/s?__biz=MzIyNjk0NzY4Ng==&mid=2247493158&idx=1&sn=5e6295a42c0f4bdeadd4a9ba7bd08ef1&chksm=e95ea23e8783c4b79527b9a7821f47bb40e0288fdd87483babb2a1f5c28322746a2ce51fffbc&scene=7#rd",
+                  "itemShowType": 0,
+                  "mpScene": 7,
+                  "reportId": "8018538119331487939:mp:440893",
+                  "report_extinfo_str": "tuple%3D3226947686_2247493158_1%26show_tag%3DR_2_1_188",
+                  "source": {
+                    "dateTime": "4天前",
+                    "tag": [
+                      {
+                        "noBg": true,
+                        "title": "阅读 188",
+                        "type": 2
+                      }
+                    ],
+                    "title": "丛集黑科技"
+                  },
+                  "src_type": 49,
+                  "thumbUrl": "https://mmbiz.qpic.cn/mmbiz_jpg/ZmNbfrXFvSw307evPY291sYuovBUxKjVlQ7EdvcVqSKfSDQLJC17Z6AKxYicnKJtM4dxABDmpOliag7EibibOlKreA/0?wx_fmt=jpeg",
+                  "timestamp": 1766994383,
+                  "title": "<em class=\"highlight\">n8n</em>实战020，白嫖GitHub，任意文件公网链接"
+                }
+              ],
+              "real_type": 2,
+              "resultType": 0,
+              "subType": 0,
+              "totalCount": 102,
+              "type": 2
+            },
+            {
+              "boxID": "0x2-0-9628609890839231791",
+              "boxPos": 11,
+              "boxPosMerge": 11,
+              "count": 1,
+              "items": [
+                {
+                  "date": 1766967653,
+                  "desc": "1. 安装顺序建议：安装<em class=\"highlight\">n8n</em> -> 安装飞书社区节点 <em class=\"highlight\">n8n</em>-nodes-feishu-lite -> 配置飞书凭证 -> 导入飞书多维表格 -> 飞书开放平台创建对接<em class=\"highlight\">n8n</em>的文档应用 -> 给飞书多维表格添加对接<em class=\"highlight\">n8n</em>的文档应用 -> 配置谷歌密钥（可选） -> 准备好调用 Seedre",
+                  "docID": "9628609890839231791",
+                  "docType": 0,
+                  "doc_url": "http://mp.weixin.qq.com/s?__biz=MzAxNjA1NTgxNg==&mid=2247483779&idx=1&sn=dff57679d538320fe2106224de83c81f&chksm=9a22103ec44655a86dd3c84ad3c1883f9121d4a87518497f084eb69ae55cfb72562c80955a6f&scene=7#rd",
+                  "itemShowType": 0,
+                  "mpScene": 7,
+                  "reportId": "9628609890839231791:mp:932029",
+                  "report_extinfo_str": "tuple%3D3016055816_2247483779_1%26show_tag%3DR_2_1_169",
+                  "source": {
+                    "dateTime": "4天前",
+                    "tag": [
+                      {
+                        "noBg": true,
+                        "title": "阅读 169",
+                        "type": 2
+                      }
+                    ],
+                    "title": "江来有AI"
+                  },
+                  "src_type": 49,
+                  "thumbUrl": "https://mmbiz.qpic.cn/mmbiz_jpg/3Anib5gmda0PK5BLeiaoeYE5gA5y7Eicvh8CfZSjHS8fs4RdtB8yvk2yJ6KJ6W65Lq0ISwK6LwgORv2Gs7LMEAvKA/0?wx_fmt=jpeg",
+                  "timestamp": 1766967653,
+                  "title": "升级<em class=\"highlight\">n8n</em>生图<em class=\"highlight\">工作流</em>，支持火山豆包Seedream 4.5，附赠飞书多维表格福利"
+                }
+              ],
+              "real_type": 2,
+              "resultType": 0,
+              "subType": 0,
+              "totalCount": 102,
+              "type": 2
+            },
+            {
+              "boxID": "0x2-0-11064398280011932361",
+              "boxPos": 12,
+              "boxPosMerge": 12,
+              "count": 1,
+              "items": [
+                {
+                  "date": 1766890056,
+                  "desc": "这个<em class=\"highlight\">工作流</em>的精髓在于：人提供策略和方向，ai负责大部分创作执行，<em class=\"highlight\">n8n</em>负责自动化串联和分发。它就像一个智能工厂：你给它一个“订单”（主题），它就能自动为你生产出符合规格的“产品”（多平台内容），并自动运送到",
+                  "docID": "11064398280011932361",
+                  "docType": 0,
+                  "doc_url": "http://mp.weixin.qq.com/s?__biz=MzYzNTE1MTA4Ng==&mid=2247483870&idx=1&sn=7d4cbedf826ca5ba5917271bd4fc4ba1&chksm=f144c9ddd2bcf2e9a9cb9b7d02f076c50abba4a6a31879b6a003c18d72e69389a8fdf8baac17&scene=7#rd",
+                  "itemShowType": 0,
+                  "mpScene": 7,
+                  "reportId": "11064398280011932361:mp:468289",
+                  "report_extinfo_str": "tuple%3D3635151086_2247483870_1%26show_tag%3DR_2_1_150",
+                  "source": {
+                    "dateTime": "5天前",
+                    "tag": [
+                      {
+                        "noBg": true,
+                        "title": "阅读 150",
+                        "type": 2
+                      }
+                    ],
+                    "title": "n8n自动化助手"
+                  },
+                  "src_type": 49,
+                  "thumbUrl": "https://mmbiz.qpic.cn/sz_mmbiz_jpg/6Yia59tsztXktnL0gib0d0DWMNqUxL7PZYD4NAzpWnAUk2QPxl16pxH64HGw6wcKyFZLCWrkk9fNMdcdLRm96rvg/0?wx_fmt=jpeg",
+                  "timestamp": 1766890056,
+                  "title": "别再当内容社畜了！<em class=\"highlight\">n8n</em>+AI 自动化你的公众号、小红书， 效率狂飙1000%！"
+                }
+              ],
+              "real_type": 2,
+              "resultType": 0,
+              "subType": 0,
+              "totalCount": 102,
+              "type": 2
+            },
+            {
+              "boxID": "0x2-0-5378281500116298281",
+              "boxPos": 13,
+              "boxPosMerge": 13,
+              "count": 1,
+              "items": [
+                {
+                  "date": 1767141300,
+                  "desc": "<em class=\"highlight\">n8n工作流</em>自动化平台在其工作流表达式评估系统中存在一个严重的任意代码执行漏洞。已登录n8n的用户，可以通过在创建工作流时植入恶意表达式，利用n8n表达式评估系统的缺陷，在服务器上执行任意代码，最终可能接管服务器",
+                  "docID": "5378281500116298281",
+                  "docType": 0,
+                  "doc_url": "http://mp.weixin.qq.com/s?__biz=MzA5NDI0NzY3Mg==&mid=2247485251&idx=1&sn=1be5edc1e38be0a1a5e2a1dccc1900f7&chksm=91278ba6c8aab50c29dc23397ca0259e48e9bd08467412ae54f072b61761f89a26530e266021&scene=7#rd",
+                  "itemShowType": 0,
+                  "mpScene": 7,
+                  "reportId": "5378281500116298281:mp:239047",
+                  "report_extinfo_str": "tuple%3D3094247672_2247485251_1%26show_tag%3DR_2_1_133",
+                  "source": {
+                    "dateTime": "2天前",
+                    "tag": [
+                      {
+                        "noBg": true,
+                        "title": "阅读 133",
+                        "type": 2
+                      }
+                    ],
+                    "title": "网络安全技术点滴分享"
+                  },
+                  "src_type": 49,
+                  "thumbUrl": "https://mmbiz.qpic.cn/mmbiz_jpg/meR9vVNE209QRibicuMI53Qtcev50Gmaqb7Nl24fhWh3XUnUvWmTYPIkiajuD4CCiazHnacdNrvJTxD06vZQ4DXCQQ/0?wx_fmt=jpeg",
+                  "timestamp": 1767141300,
+                  "title": "复现<em class=\"highlight\">n8n</em> RCE（CVE-2025-68613）CVSS 9.9漏洞利用详细版"
+                }
+              ],
+              "real_type": 2,
+              "resultType": 0,
+              "subType": 0,
+              "totalCount": 102,
+              "type": 2
+            },
+            {
+              "boxID": "0x2-0-18442036742985732786",
+              "boxPos": 14,
+              "boxPosMerge": 14,
+              "count": 1,
+              "items": [
+                {
+                  "date": 1766848437,
+                  "desc": "<em class=\"highlight\">n8n</em> 的优势在于将 AI 集成到复杂的业务流程中——连接 CRM 系统、自动化文档处理、编排多系统<em class=\"highlight\">工作流</em>，在这些场景中，语言模型虽然强大，但只是众多组件中的一个。",
+                  "docID": "18442036742985732786",
+                  "docType": 0,
+                  "doc_url": "http://mp.weixin.qq.com/s?__biz=MzUzNTk1NDc2Nw==&mid=2247486123&idx=1&sn=9fbb48250cd7925d15630e76b32cae9e&chksm=fb414e696f6928d92ccb98093da8869b7c5795c41e77233bbfa9c70ff3f3e9cb8cbabbdc864e&scene=7#rd",
+                  "itemShowType": 0,
+                  "mpScene": 7,
+                  "reportId": "18442036742985732786:mp:530503",
+                  "report_extinfo_str": "tuple%3D3535954767_2247486123_1%26show_tag%3DR_2_1_126",
+                  "source": {
+                    "dateTime": "5天前",
+                    "tag": [
+                      {
+                        "noBg": true,
+                        "title": "阅读 126",
+                        "type": 2
+                      }
+                    ],
+                    "title": "AlanHou"
+                  },
+                  "src_type": 49,
+                  "thumbUrl": "https://mmbiz.qpic.cn/sz_mmbiz_jpg/G5of9cHCAzcRKK2nTY8O3o81FkfrSzmf5L42U3Q0ADRxhv51xrH7qYtJYicTvs11HTLp74GGIEGxWUpyvc692Qg/0?wx_fmt=jpeg",
+                  "timestamp": 1766848437,
+                  "title": "Dify、<em class=\"highlight\">n8n</em> 还是 Coze？万字长文解析三大主流 AI Agent 平台"
+                }
+              ],
+              "real_type": 2,
+              "resultType": 0,
+              "subType": 0,
+              "totalCount": 102,
+              "type": 2
+            },
+            {
+              "boxID": "0x2-0-12479492922234393614",
+              "boxPos": 15,
+              "boxPosMerge": 15,
+              "count": 1,
+              "items": [
+                {
+                  "date": 1767232800,
+                  "desc": "可以把<em class=\"highlight\">工作流</em>里图片处理那一段删掉）以上准备工作的详细图文教程（如怎么申请Key、怎么建应用），二冰都整理在飞书文档里了，还没搞定的兄弟先去看文档，搞定再回来接着整：",
+                  "docID": "12479492922234393614",
+                  "docType": 0,
+                  "doc_url": "http://mp.weixin.qq.com/s?__biz=MzIyNjk0NzY4Ng==&mid=2247493207&idx=1&sn=406db874425c1c2fb0eff70cea5d6fca&chksm=e93f542bae1fffbb41532905f2c2002f1b3ddfad9028f5e9e71f150a7bc336eb99a4963e80cd&scene=7#rd",
+                  "itemShowType": 0,
+                  "mpScene": 7,
+                  "reportId": "12479492922234393614:mp:867727",
+                  "report_extinfo_str": "tuple%3D3226947686_2247493207_1%26show_tag%3DR_2_1_119",
+                  "source": {
+                    "dateTime": "1天前",
+                    "tag": [
+                      {
+                        "noBg": true,
+                        "title": "阅读 119",
+                        "type": 2
+                      }
+                    ],
+                    "title": "丛集黑科技"
+                  },
+                  "src_type": 49,
+                  "thumbUrl": "https://mmbiz.qpic.cn/mmbiz_jpg/ZmNbfrXFvSzUJpyoEWTuAab7V9diaBic6TBlIiaJosicoP6u3AdycNl1X6Id4axHbgoicDKmfia9ZVTayQrKNH92JAXw/0?wx_fmt=jpeg",
+                  "timestamp": 1767232800,
+                  "title": "<em class=\"highlight\">n8n</em>实战023，公众号文章带图片永久存储，DeepSeek+Puppeteer零成本方案"
+                }
+              ],
+              "real_type": 2,
+              "resultType": 0,
+              "subType": 0,
+              "totalCount": 102,
+              "type": 2
+            }
+          ],
+          "direction": 2,
+          "experiment": [
+            {
+              "key": "mmsearch_live_double_auto_play_exp",
+              "value": "1"
+            },
+            {
+              "key": "s1s_mixer_autonextpage_v2",
+              "value": "2"
+            },
+            {
+              "key": "mmsearchec_product_short_title",
+              "value": "0"
+            },
+            {
+              "key": "mmsearch_add_account_icon",
+              "value": "1"
+            },
+            {
+              "key": "mmsearch_new_category_exp",
+              "value": "4"
+            },
+            {
+              "key": "mmsearch_exp_financial_style",
+              "value": "2"
+            }
+          ],
+          "isAutoPlayVideo": 1,
+          "isDivide": 1,
+          "isHomePage": 1,
+          "lang": "zh_CN",
+          "offset": 18,
+          "pageNumber": 2,
+          "query": "n8n工作流",
+          "resultType": 0,
+          "ret": 0,
+          "searchID": "232571819305156886",
+          "timeStamp": 1767342417,
+          "code": 0,
+          "cost_money": 0.5,
+          "remain_money": 4.695
+        }
+      }
+    ],
+    "获取全文和数据": [
+      {
+        "json": {
+          "cost_money": 0.03,
+          "remain_money": 4.665,
+          "code": 0,
+          "msg": "",
+          "biz": "MzIwMTQ1MzMwNQ==",
+          "mid": "2458179287",
+          "idx": "1",
+          "user_name": "gh_523defab9ee0",
+          "nick_name": "数图笔记",
+          "type": 9,
+          "verify_status": "1",
+          "create_time": "2026-01-02 08:01:17",
+          "req_id": "0216xouOEVtIr4vheXMGcEOT",
+          "msg_daily_idx": "1",
+          "round_head_img": "http://mmbiz.qpic.cn/sz_mmbiz_png/WibdHHtZA7kicMG4oiakL5pg4zmXBOnTclnrJmwmTZTnMNxSOiboD4BEdU4Vwciaxqv73avtib6PwcniaSWuonQPzMJmw/0?wx_fmt=png",
+          "signature": "走向AGI",
+          "ori_head_img_url": "http://wx.qlogo.cn/mmhead/2kpMNDYsSfACibktlZW93VD6VYPCBw5fibkcpmM8OTHwjooqMYfk17OpEy80ibo0Uo7Ufv9K8aL0mc/132",
+          "title": "2025十佳AI工具",
+          "desc": "2025年，各类 AI 工具如雨后春笋般涌现，数量以千计，让人眼花缭乱。但作为普通用户，我们没必要盲目追逐每一个新产品。",
+          "cdn_url": "https://mmbiz.qpic.cn/sz_mmbiz_jpg/WibdHHtZA7kicsSh9aPdiaUEiczItrYgE5OiaCicuGk0GjYfGNQHnBXfms705dEicqzUeYmbrfPia8WoJMOFZJECkchcLQ/0?wx_fmt=jpeg",
+          "cdn_url_1_1": "https://mmbiz.qpic.cn/sz_mmbiz_jpg/WibdHHtZA7kicsSh9aPdiaUEiczItrYgE5Oia3ZGcFn7zMdH5WQDp9GRUXO94yOZru9N34zM3nR9HUicMcib0o0sicmzXQ/0?wx_fmt=jpeg",
+          "cdn_url_235_1": "https://mmbiz.qpic.cn/sz_mmbiz_jpg/WibdHHtZA7kicsSh9aPdiaUEiczItrYgE5OiaCicuGk0GjYfGNQHnBXfms705dEicqzUeYmbrfPia8WoJMOFZJECkchcLQ/0?wx_fmt=jpeg",
+          "copyright_stat": 1,
+          "author": "kevenlw",
+          "comment_id": "4322263667904823296",
+          "countryName": "中国",
+          "provinceName": "上海",
+          "show_ip_wording": "1",
+          "source_url": "",
+          "picture_page_info_list": [
+            {
+              "cdn_url": "https://mmbiz.qpic.cn/sz_mmbiz_gif/WibdHHtZA7kicCuglaDwwCoyEODiaytcsel3ptrkYkW6Vvdk1fVxA80TWoEwKdvcUaNgkmY7TmMWibzoFM0gPTtGTQ/640?wx_fmt=gif&from=appmsg",
+              "width": 1080,
+              "height": 300
+            },
+            {
+              "cdn_url": "https://mmbiz.qpic.cn/sz_mmbiz_png/WibdHHtZA7kicsSh9aPdiaUEiczItrYgE5OiajJCZgtNrgPibPRc1SMryOEvrBB73M35iaIv2qouj9Jouy06pvPPMHoicg/640?wx_fmt=png&from=appmsg",
+              "width": 751,
+              "height": 420
+            },
+            {
+              "cdn_url": "https://mmbiz.qpic.cn/sz_mmbiz_png/WibdHHtZA7kicsSh9aPdiaUEiczItrYgE5OiaRBa6f5DhFn0D4iagjfrN3UJCnl54bNggsTrSsWe04Jsd7HiaoR1GPusQ/640?wx_fmt=png&from=appmsg",
+              "width": 500,
+              "height": 1161
+            },
+            {
+              "cdn_url": "https://mmbiz.qpic.cn/sz_mmbiz_png/WibdHHtZA7kicsSh9aPdiaUEiczItrYgE5Oia29hiaOgMfam7M84aWV7ru3ibvGqTYvv7zwo1jSMvgvbmLWgUoZWT42JA/640?wx_fmt=png&from=appmsg",
+              "width": 500,
+              "height": 825
+            },
+            {
+              "cdn_url": "https://mmbiz.qpic.cn/sz_mmbiz_png/WibdHHtZA7kicsSh9aPdiaUEiczItrYgE5Oiamn77GJFj4xSicULUia1HuiagpAZGf7t7N8JdwcicMUw42YFLa3vPsrBFBA/640?wx_fmt=png&from=appmsg",
+              "width": 718,
+              "height": 305
+            }
+          ],
+          "video_page_infos": [],
+          "alias": "gh_523defab9ee0",
+          "item_show_type": 0,
+          "real_item_show_type": 0,
+          "ip_wording": "中国上海",
+          "read": -1,
+          "looking": -1,
+          "share_count": -1,
+          "zan": -1,
+          "collect_count": -1,
+          "comment_count": -1,
+          "share_info": {},
+          "claim_source_info": {
+            "claim_source_type": "",
+            "claim_source": "",
+            "aigc_type": "",
+            "aigc_wording": "",
+            "media_source_type_info": {
+              "media_source_from": "",
+              "biz_nickname": "",
+              "news_time": "",
+              "biz_link_url": "",
+              "biz_headimgurl": "",
+              "other_from_account": "",
+              "news_position_info": {
+                "country": "",
+                "province": "",
+                "city": ""
+              }
+            }
+          },
+          "url": "https://mp.weixin.qq.com/s?__biz=MzIwMTQ1MzMwNQ==&mid=2458179287&idx=1&sn=c8c0cace7abc3ecb9ec86051b1573159#rd",
+          "hashid": "c8c0cace7abc3ecb9ec86051b1573159",
+          "mp_head_img": "http://wx.qlogo.cn/mmhead/2kpMNDYsSfACibktlZW93VD6VYPCBw5fibkcpmM8OTHwjooqMYfk17OpEy80ibo0Uo7Ufv9K8aL0mc/0",
+          "content": "2025年，各类 AI 工具如雨后春笋般涌现，数量以千计，让人眼花缭乱。但作为普通用户，我们没必要盲目追逐每一个新产品。为了帮助大家省钱避坑，我们综合“血泪经验”盘点出2025 年度十大闭眼入的 AI 工具。无论你是上班族、科研人员（包括图书馆员）还是学生，只要用好这些核心工具，并在需要时选择性价比高的平替方案，就足以应对 95% 的日常需求。本榜单涵盖文本生成、图像创作、视频制作、音频配音、音乐生成、编程助手、信息管理以及智能 Agent 等主要应用场景，并兼顾了首选、平替和开源选项，满足不同预算和偏好的用户需求。1.文本全能王：Gemini，平替：豆包和千问简介：Gemini 是 Google 推出的旗舰级生成式 AI 模型，被视为当前综合实力最强的文本 AI。它能胜任从文章创作、头脑风暴到代码编写、数据分析等几乎所有文本相关任务。一经推出，Gemini 就以卓越的多语言能力征服了全球用户——支持包括中文在内的 65+ 种语言，让不同语言背景的用户都能无障碍地与之交流。对于需要撰写报告、创作文案或进行复杂问答的用户来说，Gemini 相当于一个全能的 AI 文案和智囊。优点：Gemini 采用最新的多模态大模型，性能强悍且功能全面，各类基准测试成绩稳居第一梯队。它拥有业界超长的上下文窗口，处理长文档和复杂对话游刃有余。同时多模态能力出色，能理解和生成图文等多种内容。更诱人的是，最新发布的 Gemini Flash 版本对普通用户竟然是免费的，几乎没有理由不去尝试它。免费开放让人人都能体验顶尖模型，这在以前是难以想象的——Gemini 的出现可谓“真香”，完全属于那种可以闭眼入手的选择。缺点与替代：唯一需要考虑的是 Gemini 属于封闭的在线服务，需使用 Google 平台。在国内使用可能需要额外的网络支持，但冲着它对中文的优秀支持和免费策略，还是非常值得一试。如果实在无法使用或希望本地部署，国内免费的平替工具「豆包」是首选，其功能全面性在免费模型中首屈一指。对于喜欢开源自行搭建的用户，阿里巴巴的Qwen（通义千问）值得关注。Qwen 提供了大小不同的多种模型规格，方便根据设备性能选择，而且在中文理解和推理方面表现不俗。总的来说，在文本生成领域，Gemini 是当之无愧的王者，而豆包和 Qwen 则为预算有限或追求自主可控的用户提供了有力支撑。2.图像创作首席：Midjourney，平替：即梦和豆包，新星：Flux简介：Midjourney 是 AI 图像生成领域的标杆工具，一直以卓越的艺术质感和稳定性稳坐头把交椅。无论是插画设计、概念草图还是创意海报，Midjourney 都能根据提示词生成令人惊叹的视觉作品，被许多设计师和艺术从业者奉为灵感神器。它对风格和细节的把控出色，生成的图像一致性高，而且支持一定程度的编辑与迭代，方便用户不断细化创意。如果你需要快速获得高质量的原创图片素材，Midjourney 会是你的“不二之选”。优点：作为公认的“唯一王者”，Midjourney 的图像质感细腻逼真，风格多样且高度可控。它在理解复杂场景和抽象概念方面表现突出，往往能产出超出预期的惊艳作品。使用体验上，经过多代迭代，Midjourney 已经变得相对友好，支持用户对生成结果进行调整、放大等操作，满足创作需求。缺点： Midjourney 的唯一槽点就是价格。按使用量计费的模式下，每张高质量图片折合人民币约 1 元。看似单价不高，但如果需要大量生成或反复尝试，花费会迅速累积。这对于预算有限的普通用户来说压力不小，可谓“又爱又恨”。平替方案：要是觉得 Midjourney 太贵，不妨试试国内的即梦 (Jimeng) 或豆包。这两个平替在画面一致性、参考图控制和编辑功能上表现优异，却仅需大约 ¥0.3 一张图，性价比极高。每张图三毛钱的效果不香吗？对于追求性价比的打工人来说，这简直是福音。此外，开源阵营的Flux也是今年崛起的新星。它只有 60 亿参数的“小体型”，一般配置的6GB显存显卡都能跑起来，却依然能生成质感优秀、理解中文语意到位的图像。Flux 让技术玩家可以低成本地在本地体验 AI 绘画的乐趣。总的来说，Midjourney 代表了画质的顶峰，适合对效果要求极高且愿意投入成本的用户；而即梦、豆包等提供了平价选择，让更多人以可承受的成本踏入 AI 绘画世界。3.视频领军者Runway Gen-3，平替：可灵和万象简介：Runway Gen-3 Alpha 是现阶段 AI 视频生成领域的先锋产品，其出现让“文本生成视频”从 PPT 水准跃升到了接近电影级的质感。借助 Runway Gen-3，用户可以将文字脚本直接生成动态视频：不仅画面质量出色，角色的动作还十分自然流畅，更难得的是还能实现声音和画面的精准同步（例如角色口型与配音匹配）。这使它非常适合用于快速制作宣传片、动画短片或为影片预览情节——以前需要摄制团队才能完成的任务，现在一台电脑加上 AI 就能搞定，极大降低了视频内容生产的门槛。优点：Runway Gen-3 的最大优势在于生成效果逼真。它能根据脚本同时生成视觉和音频，两者天衣无缝地结合，使最终视频仿佛由专业团队制作。角色动作自然、不僵硬，镜头运动和场景过渡也相当平滑，整体观感达到生产级水准。对于追求效率的内容创作者来说，Runway Gen-3 提供了一条从创意到成品的高速通道。缺点：成本高昂是Runway Gen-3无法回避的问题。按照目前的定价，生成 5 秒视频约需花费 ¥14，相当于每秒接近 3元人民币。如果想生成1分钟的视频，费用会高达数百元，这对个人用户而言负担不小。此外，该产品仍处于 Alpha 阶段，可能存在一定使用门槛，初次上手需要摸索。平替方案：如果预算有限，可以考虑国内团队推出的「可灵 Kling 1.5 Pro」。它同样支持声画同步，人物表演的控制细腻丰富，而价格仅为 Runway 的三分之一——5秒视频大约 ¥4。在保证相当质量的前提下，大幅降低了使用成本，非常适合需要高性价比视频生成的用户。另一方面，在开源领域，万象 2.1是不容错过的选择。这款阿里系开源模型提供了丰富的玩法，支持用户自定义许多参数，生成的视频质量也毫不逊色于商业产品。对于技术达人来说，万象 2.1 意味着更大的自由度和可控性。进阶提示：此外市面上还有一些针对特定场景的工具可以配合使用，比如 Weidu 擅长二维角色视频、Hailuo 在复杂动作生成上表现突出，大家可以根据具体需求与上述工具组合使用。总而言之，Runway Gen-3 引领了 AI 视频创作的风潮，如果资金充裕它能带来最佳效果；而可灵和万象等方案则让大众也能以更低成本玩转 AI 视频制作。4.配音神器：MiniMax简介：MiniMax 是一款平价高效的 AI 配音（TTS）工具，特别适合需要将文字转化为语音的场景，比如视频解说、课程配音、有声读物制作等。它由国内团队开发，每月订阅费用 ¥36，却能够合成长达 2 小时的语音内容。操作上非常简单：输入文字即可生成自然流畅的语音，如果对声音风格有特殊要求，还可以用自然语言指令调整音色和语气（例如“语气更激情”或“声音更沉稳”）。对于经费紧张但又想提升内容品质的创作者来说，MiniMax 可谓物美价廉的配音利器。优点：价格亲民，效果出众是 MiniMax 最明显的优势。对比传统真人配音或昂贵的商用TTS服务，MiniMax 以每月几顿外卖的钱就能搞定大部分日常配音需求，性价比极高。生成的声音自然度在中文领域表现优异，吐词清晰、情感恰当，完全可以媲美专业配音人员。更难得的是，它支持用简单的中文描述来微调声音效果，让不懂技术的用户也能玩转音色定制。对于需要频繁制作解说视频或音频节目的自媒体打工人来说，MiniMax 简直是救星，既省下了请配音的开支，又大大节省了时间。缺点：MiniMax 目前主要侧重中文及部分常见语言的合成，在多语言（尤其是英文）方面的表现相对一般。如果你的项目需要高质量的英语配音，ElevenLabs也许是更好的选择——它在外语语音的自然度上更胜一筹。不过 ElevenLabs 对国内用户来说有网络和价格门槛，需要翻墙访问且收费较高。相较之下，MiniMax 虽然在外语上略逊一筹，但胜在使用便利和成本低廉，对于中文内容制作为主的用户来说已经绰绰有余。开源替代：喜欢自行搭建或对音频技术感兴趣的用户，可以关注开源项目Fish Speech或Index TTS等。这些工具提供了语音克隆和文本转语音的能力，经过适当训练可以模仿特定人的声音，甚至将录音转成别的声音，玩法非常多。不过，上手开源方案需要一定技术门槛和硬件支持，一般用户不妨安心用 MiniMax 这类现成服务就好。总之，MiniMax 以极低的门槛让人人都能拥有自己的“AI 声优”，对于内容创作者来说实在值得一试。5.音乐生成霸主：Suno简介：Suno 是当前 AI 音乐创作领域当之无愧的霸主。借助 Suno，你只需简单描述曲风或哼唱几句旋律，就能让 AI 在几秒钟内生成一首原创乐曲——无论是流行歌曲、小调旋律还是背景配乐，都不在话下。令人惊喜的是，Suno 生成的音乐质量震撼级：旋律动听、节奏契合，甚至还能搭配和声、人声演唱等元素，听起来相当完整。对于缺乏音乐创作技巧但有创意想法的用户来说，Suno 就像一座可依赖的“AI 作曲家”。无论你是想给视频配乐，还是单纯娱乐地“整点音乐”，Suno 都能满足你的需求。优点：Suno 最吸引人的地方在于低门槛高产出。它提供了足够的免费额度，基本上每天能生成十首曲子，让用户可以尽情试验各种音乐点子。而其付费会员每月约 $10，也足以满足深度玩家的需求。相较于传统音乐制作需要的专业知识和设备，Suno 几乎把创作复杂音乐的门槛降到了零。更难得的是，Suno 生成的音乐风格多样，从电子、古典到摇滚，都能根据提示呈现相应风味，很多用户听完直呼“这竟然是 AI 写的？”缺点：对于一般用户而言，Suno 已经非常强大，但对于专业音乐人来说，它缺乏精细编辑控制可能是个不足。生成的音乐通常是一气呵成，如果你想对某一段落、某一乐器做细节调整，直接在 Suno 上并不容易实现。这时候可以考虑配合传统的数字音频工作站（DAW）来后期编辑。进阶选择：如果你对音乐有精细化创作需求，可以尝试更专业的 AI 作曲工具Udio。Udio 支持将音乐分段生成，允许用户指定每一段的情绪和配器，并对音高、节奏进行微调，非常适合有一定音乐理论基础的专业玩家。当然，相应地，Udio 的使用成本和复杂度也比 Suno 更高。对于大部分人而言，Suno 已经足够拿来日常玩音乐：它让五音不全的小白也能创作出像模像样的曲子，让音乐创作真正走向大众化。正如很多网友所说：“有了 Suno，人人都可以当音乐人！”6.AI浏览器新锐：Arc简介：Arc 浏览器以其清新的界面设计和独特的使用理念闻名，如今更是在浏览器中深度整合了 AI 助手，为用户带来颠覆性的上网新体验。在 Arc 中，你可以方便地让 AI 总结当前网页内容、生成阅读笔记，或者直接对网页提出问题，AI 会以上下文相关的方式给出解答。这意味着，当你浏览一篇看不懂的专业文章时，无需再复制文本去找外部 AI 翻译解释——Arc 内置的智能助手会即时为你服务，再也没有比这更顺滑的体验了。2025 年的互联网冲浪，浏览器里没个 AI 助手都不好意思说自己上网。Arc 正是引领这一潮流的产品，让用户感叹“用了就回不去”。优点：Arc 提供了舒适优雅的 UI和无缝衔接的 AI 功能。界面上采用了革新的侧边栏和空间概念，让多任务浏览井井有条，深受专业人士喜爱。同时内置的 AI 模块（Arc AI/Arc Max）支持多种强大功能：一键摘要网页、智能写作协助、跨标签内容查询等等，将浏览器变成了用户的智能助手。这样的整合让信息获取效率大大提升，再也不需要在网页和聊天机器人之间来回切换，工作流简洁高效。对于经常需要网上查资料、阅读文献的用户来说，Arc 的这套组合简直如虎添翼。缺点：作为一款新兴浏览器，Arc 当前主要面向欧美市场，国内用户使用时在本地化方面可能略有不足（如界面语言、对国产网页的适配等）。此外，从习惯了 Chrome/Firefox 转换过来需要一点学习成本，Arc 独特的交互方式可能刚上手时会让人有些摸不着头脑。但这些都不是大问题，多用几天就习惯了。对于无法使用 Arc 的用户，国内也有一些替代方案。国产平替：夸克浏览器和字节系的豆包浏览器都在积极布局 AI 功能。如果你偏好熟悉的国产产品环境，它们内置的 AI 助手在日常使用中也完全够用。例如夸克已经支持智能搜索摘要、智能问答等，豆包则是字节跳动体系的通用 AI 平台，也提供浏览器插件式的助手服务。虽然在界面打磨和创新性上不及 Arc，但胜在使用门槛低、兼容国内网页环境好。总的来说，现在上网装个带 AI 的浏览器已经是刚需，Arc 也好，夸克/豆包也罢，选一个顺手的用起来，你会发现信息获取和网络工作的效率提升了不止一个档次。7.编程首席助手：Cursor，平替：字节Trae简介：Cursor 是当前广受开发者欢迎的一款AI 编程助手，集成在代码编辑器/IDE 中，致力于提升编程效率和代码质量。安装 Cursor 后，你在编码时就仿佛多了一个贴身的智能“队友”：它能根据上下文自动补全代码、检测错误并给出修改建议，甚至帮你解释复杂的代码逻辑或生成文档注释。当遇到棘手的问题时，你也可以直接用自然语言向 Cursor 提问，它会利用内置的大模型为你分析问题、提供解决思路。这对于程序员来说，无疑是如虎添翼的体验；而即便你不是专业开发者，借助 Cursor 你也可以更轻松地写一些小脚本或代码来自动化工作。优点：Cursor 被誉为“程序员首选”是有道理的。首先，它性能稳定，无论项目大小都能流畅运行，不会因为调用 AI 服务而频繁卡顿。其次，Cursor 的开发团队非常给力，更新迭代快，不断引入最新的模型和功能，这也使其始终保持业界领先。例如，当新的更强大的编程模型出现时，Cursor 常常能第一时间支持，让用户总能用上“最聪明的大脑”写代码。此外，Cursor 在界面和功能细节上也针对开发者做了优化，尽可能融入现有的编码工作流，不会打断你的思路。总之，使用过 Cursor 的工程师普遍反映编码效率显著提升，再也回不去没有 AI 辅助的“石器时代”编程了。缺点：Cursor 本身可能需要订阅或使用自己的 API Key，成本是需要考虑的一方面（高级模型的调用费用不菲）。对于业余编程爱好者或学生来说，如果预算有限，可能无法长期开启最高等级的 AI 服务。另外，有些特殊或过于本地化的编程场景下，AI 可能不如人类有针对性（比如国内的某些业务框架，AI 训练语料较少）。不过这些问题并不妨碍 Cursor 在主流编程任务中的出色表现。平价替代：如果你在寻找更实惠的替代方案，可以尝试一下Trae这款新晋 AI 编程 IDE。Trae 基于 VS Code 打造，内置了强大的代码补全和问答能力。它最大的亮点之一是提供了“Slo 模式”（可能是较慢但便宜的模型选项），让用户可以以极低的成本使用 AI 辅助。尽管性能稍逊顶级模型，但胜在价格友好。Trae 在产品细节上也颇下功夫，界面美观，默认模型针对中文做了一些优化。据用户反馈，即使是非程序员，用 Trae 来写点简单脚本或技术文章也很顺手，因为它就像一个贴心的文字编辑助手。起步价极低甚至免费，降低了 AI 编程助手的入门门槛。总而言之，针对编程任务，Cursor 是追求极致效率和功能的首选，而 Trae 则让更多人以更低成本体验到 AI 编程助手的魅力。8.最佳个人知识环境：NotebookLM简介：NotebookLM 是 Google 推出的实验性 AI 知识库助手，旨在充当用户的“第二大脑”，帮助整理和吸收海量信息。它的工作方式是：你可以将大量文档、笔记、PDF 等资料导入 NotebookLM，随后 AI 会对这些资料进行理解、关联和总结。你可以像和助手对话一样向其提问，让它基于资料内容回答你的问题，甚至生成某个主题的汇总报告。在学习或研究场景下，这太实用了——比如学生备考时丢进几本教材，它能提炼出重点并解答疑惑；研究人员查文献时，它能概括几十篇论文的主要发现。更厉害的是，NotebookLM 不仅会给你文字总结，还可以生成类似播客那样的口述讲解，让你以更轻松的方式获取知识。难怪有人感叹：“NotebookLM 谁不用谁亏！”这可是提升学习效率的神器。优点：多资料整合能力是 NotebookLM 最惊艳的特性。传统笔记或知识管理工具更多是存储，而 NotebookLM 则能“理解”你存进去的东西，并进行跨资料的关联分析。它能自动给出材料的概要、大纲，提取出关键信息点，还能根据你的提问从资料堆里找出对应答案。对于同时处理多本书、多篇论文的人来说，这相当于拥有了一个不知疲倦的私人助理，帮你梳理繁杂的信息。NotebookLM 对中文的支持随着底层模型改进也越来越好，再加上和 Google 自家服务（如 Docs、Drive）的联动，相信未来会成为学术界和知识工作者的标配工具。缺点：目前 NotebookLM 仍处于测试阶段，普通用户获取资格可能需要一些等待。而且由于需要将资料上传云端，对于特别敏感的内部文档，很多机构可能出于隐私考虑不会使用。另外，它的强大也依赖于资料质量——垃圾数据太多的话，AI 生成的总结也可能偏离主题。所以使用时仍需一些人工甄别。国产优势：在知识管理和企业知识库领域，国内也有不错的解决方案可以结合 AI 使用。个人用户可以关注Cubox这款笔记/收藏工具，它引入了 AI 摘要和智能分类功能，非常适合日常信息的积累和整理。企业用户则强烈推荐飞书：飞书不仅是办公即时通讯工具，还是强大的知识库平台，最近更集成了类 GPT 的智能助手和自动化功能。用飞书搭建企业知识库，可以实现员工提问，AI 在公司文档中找答案的效果，大大提高信息共享效率。而且飞书同时兼顾了知识库 + Agent + IM，在国内办公软件中独树一帜，颇具未来感。总而言之，善用这些 AI 知识管理工具，你会明显感觉到学习和工作的信息处理效率提升，以前需要几个小时翻资料才能搞定的事，现在也许问一问 AI 就解决了。9.最佳研究伙伴：DeepResearch简介：在今年 Agent（智能体）概念大火的背景下，DeepResearch 脱颖而出，成为少数真正实用的通用智能 Agent之一。顾名思义，DeepResearch 特别擅长深度调查研究类的任务，OpenAI的ChatGPT、谷歌的Gemini和Anthropic的Claude都有DeepResearch，都赌上身家，配备了各自最先进和强大的思考模型，且基本不分伯仲、各有千秋。当你需要对一个陌生课题进行全面调研、或者对某个复杂问题追根溯源时，可以把这个“苦差事”交给 DeepResearch。它会自动帮你上网搜索、爬取相关信息，阅读分析后给出结构化的调研报告或结论。比如你想了解“某种新材料的最新研究进展”，DeepResearch 可以帮你搜罗论文和新闻、提炼要点，最终输出一篇总结报告，省去了你东拼西凑资料的时间。有人把它比作信息界的“私家侦探”——哪里有有用信息，它就潜入哪里替你挖掘出来。对于需要经常写报告、做竞品分析或学术综述的人来说，DeepResearch 简直是一件梦寐以求的利器。特点：DeepResearch 之所以引人注目，不仅因为它在特定场景下很好用，还因为目前市面上缺少好用的通用 Agent 产品。很多号称 Agent 的新工具，要么功能片面要么不够智能，实际利用率并不高。而 DeepResearch 则用实战证明了智能 Agent 的价值。它将强大的 GPT-4 类模型与搜索引擎相结合，既有大模型的语言理解和生成能力，又有联网获取最新资料的能力，真正做到学以致用。实测中，DeepResearch 在科技、商业等领域的调研任务上表现出色，输出内容详实有据，往往还附带参考资料来源，令人倍感安心。使用建议：对一般用户来说，DeepResearch 并不是每天都会用到的工具，但一旦遇到需要深度调查的场景，它就是你的秘密武器。需要注意的是，它毕竟是 AI，如果碰到一些需要高度专业判断的地方，还需自己把关。另外，对于常规的日常任务，其实没有必要动用 DeepResearch 大材小用——直接用 ChatGPT 或类似的大模型回答就够了（很多人平时索性把 GPT-4 当通用 Agent 来用）。DeepResearch 更适合那种你自己都无从下手的大课题，一键下单让 AI 满世界去帮你找答案。总的来说，在智能 Agent 方兴未艾的2025年，DeepResearch 用实力证明了“AI 调研员”是可行且有价值的，值得有这类需求的专业人士尝试。10.自动化流程神器：n8n简介：n8n 是一款开源的自动化工作流工具，被许多极客誉为“国产 Zapier 替代”。它可以让你在不怎么用代码的情况下，把各种应用和任务串联起来，搭建自动化流程。举个例子，你可以用 n8n 设定这样一个工作流：监控邮箱收件箱 -> 自动解析邮件内容 -> 调用 AI 撰写回复 -> 定时发送回复邮件。所有这些步骤都能在 n8n 的可视化界面中拖拽配置完成，非常酷！n8n 提供了上百种常见服务的集成节点（从数据库、短信服务到各类云应用），也支持调用 API 和脚本，所以可玩性极高。对于想要偷懒又苦于重复机械性工作的人来说，n8n 简直就是福音——许多以前需要手动完成的琐事，现在设置好工作流后AI+自动化帮你 24 小时跑,真正实现“解放双手”。优点：n8n 的最大优点就是开源免费且高度可定制。不像商业平台那样调用受限，你可以将 n8n 部署在自己的服务器上，按需安装插件节点，实现完全属于你自己的自动化“机器人”。它的社区也很活跃，已经有大量现成的流程模板可供参考。一旦投入时间把常用流程搭建好，n8n 会源源不断地为你节约时间、人力成本——有人形容第一次用 n8n 跑完一个繁琐流程时，那种感觉就像突然拥有了一个只知道干活不抱怨的免费助手，非常畅快。对于团队和企业来说，n8n 也提供了比 SaaS 更灵活的数据保障，重要数据可以在内部流转，不必担心隐私泄漏。缺点：需要指出的是，n8n 并非完全零门槛。虽然它提供了图形化界面，但想充分利用其强大功能，你仍需要一些技术基础，比如了解 API、Webhook 等概念，否则初次配置时可能会摸不着头脑。相对于傻瓜式的自动化工具，n8n 更像是给具有一定编程/脚本功底的人用的“半成品工具包”。此外，部署在本地或服务器上也需要一定运维知识。不过一旦度过了这个学习期，n8n 将会大幅提升你的工作效率，很多重复劳动将从此告别人工。正所谓“磨刀不误砍柴工”，前期多花点时间折腾 n8n，很快你就能尝到自动化带来的甜头。应用场景与替代：n8n 在科技互联网从业者中人气很高。如果你觉得搭建麻烦，市面上也有一些云端自动化服务（如 Zapier、IFTTT、腾讯云函数等）可供选择，但要么收费高要么不够灵活。n8n 的优势就在于白嫖和自定义。对于每天被各种重复表格、数据搬运、通知发送搞得头大的“打工人”来说，n8n 可谓效率提升的救星——花点时间配置好，日后它将乖乖替你干活，再枯燥无聊的任务它也不会喊累。相信在未来，会有越来越多的职场人士意识到自动化的价值，把像 n8n 这样的工具纳入自己的技能清单。   总 结   总的来说，我们大可不必追逐每一个新冒出的 AI 应用。只要在常用领域选定一个好用的“首选”工具，在非高频需求上用平价“平替”搭配使用，就足以覆盖 95% 的工作和学习场景。剩下那 5% 特殊且棘手的问题，再临时利用 AI 去定向搜索和解决即可。这样的组合拳不但经济高效，而且实践证明完全可行。今年的 AI 工具百花齐放，但真正能长期提高生产力的也就这些。与其疲于奔命追新，不如把这些公认好用的工具吃透用熟。希望本年度榜单能帮助你筛选出最适合自己的 AI 好帮手，让 2026年的你工作更聪明、生活更轻松！",
+          "content_multi_text": "<section style=\"text-align: center;\"><img class=\"rich_pages wxw-img\" data-ratio=\"0.2777777777777778\" data-type=\"gif\" data-w=\"1080\" type=\"block\" data-imgfileid=\"310690395\" data-aistatus=\"1\" style=\"height: auto !important;\" data-src=\"https://mmbiz.qpic.cn/sz_mmbiz_gif/WibdHHtZA7kicCuglaDwwCoyEODiaytcsel3ptrkYkW6Vvdk1fVxA80TWoEwKdvcUaNgkmY7TmMWibzoFM0gPTtGTQ/640?wx_fmt=gif&amp;from=appmsg\"  /></section><section><mp-common-mpaudio class=\"js_editor_audio res_iframe js_uneditable custom_select_card mp_common_widget\" data-pluginname=\"insertaudio\" name=\"2025十佳AI工具\" author=\"数图笔记\" src=\"/cgi-bin/readtemplate?t=tmpl/audio_tmpl&amp;name=2025%E5%8D%81%E4%BD%B3AI%E5%B7%A5%E5%85%B7&amp;play_length=1%E5%88%86%E9%92%9F\" isaac2=\"0\" low_size=\"1024\" source_size=\"1024\" high_size=\"1024\" play_length=\"68000\" data-trans_state=\"1\" data-verify_state=\"3\" voice_encode_fileid=\"MzIwMTQ1MzMwNV8yNDU4MTc5Mjg2\" cover=\"http://mmbiz.qpic.cn/sz_mmbiz_jpg/WibdHHtZA7kicsSh9aPdiaUEiczItrYgE5Oiat1K9bB2xY8ZMcwx0Ms63Fwich3yEPH8EmBrk6OwialtI6ciaKialRLPPvQ/0?wx_fmt=jpeg\" duration=\"68\" err_tips=\"\"></mp-common-mpaudio></section><section style=\"box-sizing: border-box;font-style: normal;font-weight: 400;text-align: justify;font-size: 16px;color: rgb(62, 62, 62);\" data-pm-slice=\"0 0 []\"><section style=\"color: rgb(110, 125, 146);box-sizing: border-box;\"><p style=\"white-space: normal;margin: 0px 0px 24px;padding: 0px;box-sizing: border-box;\"><span leaf=\"\">2025年，各类 AI 工具如雨后春笋般涌现，数量以千计，让人眼花缭乱。但作为普通用户，我们没必要盲目追逐每一个新产品。为了帮助大家省钱避坑，我们综合“血泪经验”盘点出2025 年度十大闭眼入的 AI 工具。无论你是上班族、科研人员（包括图书馆员）还是学生，只要用好这些核心工具，并在需要时选择性价比高的平替方案，就足以应对 95% 的日常需求。本榜单涵盖文本生成、图像创作、视频制作、音频配音、音乐生成、编程助手、信息管理以及智能 Agent 等主要应用场景，并兼顾了首选、平替和开源选项，满足不同预算和偏好的用户需求。</span></p><section style=\"text-align: center;\"><img class=\"rich_pages wxw-img\" data-ratio=\"0.559254327563249\" data-s=\"300,640\" data-type=\"png\" data-w=\"751\" type=\"block\" data-imgfileid=\"310695438\" data-aistatus=\"1\" style=\"height: auto !important;\" data-src=\"https://mmbiz.qpic.cn/sz_mmbiz_png/WibdHHtZA7kicsSh9aPdiaUEiczItrYgE5OiajJCZgtNrgPibPRc1SMryOEvrBB73M35iaIv2qouj9Jouy06pvPPMHoicg/640?wx_fmt=png&amp;from=appmsg\"  /></section><p style=\"white-space: normal;margin: 0px;padding: 0px;box-sizing: border-box;\"><span leaf=\"\"><br  /></span></p><p style=\"white-space: normal;margin: 0px;padding: 0px;box-sizing: border-box;\"><span leaf=\"\"><br  /></span></p><p style=\"text-align: center;white-space: normal;margin: 0px;padding: 0px;box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">1.文本全能王：Gemini，平替：豆包和千问</span></strong></p></section><section style=\"margin: 0.5em 0px;box-sizing: border-box;\"><section style=\"border-top: 4px solid rgb(110, 125, 146);box-sizing: border-box;\"><svg viewbox=\"0 0 1 1\" style=\"float:left;line-height:0;width:0;vertical-align:top;\"></svg></section><section style=\"margin: 3px 0px 0px;border-top: 1px solid rgb(110, 125, 146);box-sizing: border-box;\"><svg viewbox=\"0 0 1 1\" style=\"float:left;line-height:0;width:0;vertical-align:top;\"></svg></section></section><section style=\"color: rgb(110, 125, 146);box-sizing: border-box;\"><p style=\"white-space: normal;margin: 16px 0px 24px;padding: 0px;box-sizing: border-box;\"><span style=\"color: rgb(148, 124, 171);box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">简介：</span></strong></span><span leaf=\"\">Gemini 是 Google 推出的旗舰级生成式 AI 模型，被视为当前综合实力最强的文本 AI。它能胜任从文章创作、头脑风暴到代码编写、数据分析等几乎所有文本相关任务。一经推出，Gemini 就以卓越的多语言能力征服了全球用户——支持包括中文在内的 65+ 种语言，让不同语言背景的用户都能无障碍地与之交流。对于需要撰写报告、创作文案或进行复杂问答的用户来说，Gemini 相当于一个全能的 AI 文案和智囊。</span></p><p style=\"white-space: normal;margin: 0px 0px 24px;padding: 0px;box-sizing: border-box;\"><span style=\"color: rgb(148, 124, 171);box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">优点：</span></strong></span><span leaf=\"\">Gemini 采用最新的多模态大模型，性能强悍且功能全面，各类基准测试成绩稳居第一梯队。它拥有业界超长的上下文窗口，处理长文档和复杂对话游刃有余。同时多模态能力出色，能理解和生成图文等多种内容。更诱人的是，最新发布的 Gemini Flash 版本对普通用户竟然是免费的，几乎没有理由不去尝试它。免费开放让人人都能体验顶尖模型，这在以前是难以想象的——Gemini 的出现可谓“真香”，完全属于那种可以闭眼入手的选择。</span></p><p style=\"white-space: normal;margin: 0px 0px 24px;padding: 0px;box-sizing: border-box;\"><span style=\"color: rgb(148, 124, 171);box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">缺点与替代：</span></strong></span><span leaf=\"\">唯一需要考虑的是 Gemini 属于封闭的在线服务，需使用 Google 平台。在国内使用可能需要额外的网络支持，但冲着它对中文的优秀支持和免费策略，还是非常值得一试。如果实在无法使用或希望本地部署，国内免费的平替工具「豆包」是首选，其功能全面性在免费模型中首屈一指。对于喜欢开源自行搭建的用户，阿里巴巴的Qwen（通义千问）值得关注。Qwen 提供了大小不同的多种模型规格，方便根据设备性能选择，而且在中文理解和推理方面表现不俗。总的来说，在文本生成领域，Gemini 是当之无愧的王者，而豆包和 Qwen 则为预算有限或追求自主可控的用户提供了有力支撑。</span></p><p style=\"white-space: normal;margin: 0px;padding: 0px;box-sizing: border-box;\"><span leaf=\"\"><br  /></span></p><p style=\"text-align: center;white-space: normal;margin: 0px;padding: 0px;box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">2.图像创作首席：Midjourney，平替：即梦和豆包，新星：Flux</span></strong></p></section><section style=\"margin: 0.5em 0px;box-sizing: border-box;\"><section style=\"border-top: 4px solid rgb(110, 125, 146);box-sizing: border-box;\"><svg viewbox=\"0 0 1 1\" style=\"float:left;line-height:0;width:0;vertical-align:top;\"></svg></section><section style=\"margin: 3px 0px 0px;border-top: 1px solid rgb(110, 125, 146);box-sizing: border-box;\"><svg viewbox=\"0 0 1 1\" style=\"float:left;line-height:0;width:0;vertical-align:top;\"></svg></section></section><section style=\"color: rgb(110, 125, 146);box-sizing: border-box;\"><p style=\"white-space: normal;margin: 16px 0px 24px;padding: 0px;box-sizing: border-box;\"><span style=\"color: rgb(148, 124, 171);box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">简介：</span></strong></span><span leaf=\"\">Midjourney 是 AI 图像生成领域的标杆工具，一直以卓越的艺术质感和稳定性稳坐头把交椅。无论是插画设计、概念草图还是创意海报，Midjourney 都能根据提示词生成令人惊叹的视觉作品，被许多设计师和艺术从业者奉为灵感神器。它对风格和细节的把控出色，生成的图像一致性高，而且支持一定程度的编辑与迭代，方便用户不断细化创意。如果你需要快速获得高质量的原创图片素材，Midjourney 会是你的“不二之选”。</span></p><p style=\"white-space: normal;margin: 0px 0px 24px;padding: 0px;box-sizing: border-box;\"><span style=\"color: rgb(148, 124, 171);box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">优点：</span></strong></span><span leaf=\"\">作为公认的“唯一王者”，Midjourney 的图像质感细腻逼真，风格多样且高度可控。它在理解复杂场景和抽象概念方面表现突出，往往能产出超出预期的惊艳作品。使用体验上，经过多代迭代，Midjourney 已经变得相对友好，支持用户对生成结果进行调整、放大等操作，满足创作需求。</span></p><p style=\"white-space: normal;margin: 0px 0px 24px;padding: 0px;box-sizing: border-box;\"><span style=\"color: rgb(148, 124, 171);box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">缺点：</span></strong></span><span leaf=\"\">&nbsp;Midjourney 的唯一槽点就是价格。按使用量计费的模式下，每张高质量图片折合人民币约 1 元。看似单价不高，但如果需要大量生成或反复尝试，花费会迅速累积。这对于预算有限的普通用户来说压力不小，可谓“又爱又恨”。</span></p><p style=\"white-space: normal;margin: 0px 0px 24px;padding: 0px;box-sizing: border-box;\"><span style=\"color: rgb(148, 124, 171);box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">平替方案：</span></strong></span><span leaf=\"\">要是觉得 Midjourney 太贵，不妨试试国内的即梦 (Jimeng) 或豆包。这两个平替在画面一致性、参考图控制和编辑功能上表现优异，却仅需大约 ¥0.3 一张图，性价比极高。每张图三毛钱的效果不香吗？对于追求性价比的打工人来说，这简直是福音。此外，开源阵营的Flux也是今年崛起的新星。它只有 60 亿参数的“小体型”，一般配置的6GB显存显卡都能跑起来，却依然能生成质感优秀、理解中文语意到位的图像。Flux 让技术玩家可以低成本地在本地体验 AI 绘画的乐趣。总的来说，Midjourney 代表了画质的顶峰，适合对效果要求极高且愿意投入成本的用户；而即梦、豆包等提供了平价选择，让更多人以可承受的成本踏入 AI 绘画世界。</span></p><p style=\"white-space: normal;margin: 0px;padding: 0px;box-sizing: border-box;\"><span leaf=\"\"><br  /></span></p><p style=\"text-align: center;white-space: normal;margin: 0px;padding: 0px;box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">3.视频领军者Runway Gen-3，平替：可灵和万象</span></strong></p></section><section style=\"margin: 0.5em 0px;box-sizing: border-box;\"><section style=\"border-top: 4px solid rgb(110, 125, 146);box-sizing: border-box;\"><svg viewbox=\"0 0 1 1\" style=\"float:left;line-height:0;width:0;vertical-align:top;\"></svg></section><section style=\"margin: 3px 0px 0px;border-top: 1px solid rgb(110, 125, 146);box-sizing: border-box;\"><svg viewbox=\"0 0 1 1\" style=\"float:left;line-height:0;width:0;vertical-align:top;\"></svg></section></section><section style=\"color: rgb(110, 125, 146);box-sizing: border-box;\"><p style=\"white-space: normal;margin: 16px 0px 24px;padding: 0px;box-sizing: border-box;\"><span style=\"color: rgb(148, 124, 171);box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">简介：</span></strong></span><span leaf=\"\">Runway Gen-3 Alpha 是现阶段 AI 视频生成领域的先锋产品，其出现让“文本生成视频”从 PPT 水准跃升到了接近电影级的质感。借助 Runway Gen-3，用户可以将文字脚本直接生成动态视频：不仅画面质量出色，角色的动作还十分自然流畅，更难得的是还能实现声音和画面的精准同步（例如角色口型与配音匹配）。这使它非常适合用于快速制作宣传片、动画短片或为影片预览情节——以前需要摄制团队才能完成的任务，现在一台电脑加上 AI 就能搞定，极大降低了视频内容生产的门槛。</span></p><p style=\"white-space: normal;margin: 0px 0px 24px;padding: 0px;box-sizing: border-box;\"><span style=\"color: rgb(148, 124, 171);box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">优点：</span></strong></span><span leaf=\"\">Runway Gen-3 的最大优势在于生成效果逼真。它能根据脚本同时生成视觉和音频，两者天衣无缝地结合，使最终视频仿佛由专业团队制作。角色动作自然、不僵硬，镜头运动和场景过渡也相当平滑，整体观感达到生产级水准。对于追求效率的内容创作者来说，Runway Gen-3 提供了一条从创意到成品的高速通道。</span></p><p style=\"white-space: normal;margin: 0px 0px 24px;padding: 0px;box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span style=\"color: rgb(148, 124, 171);box-sizing: border-box;\"><span leaf=\"\">缺点：</span></span></strong><span leaf=\"\">成本高昂是Runway Gen-3无法回避的问题。按照目前的定价，生成 5 秒视频约需花费 ¥14，相当于每秒接近 3元人民币。如果想生成1分钟的视频，费用会高达数百元，这对个人用户而言负担不小。此外，该产品仍处于 Alpha 阶段，可能存在一定使用门槛，初次上手需要摸索。</span></p><p style=\"white-space: normal;margin: 0px 0px 24px;padding: 0px;box-sizing: border-box;\"><span style=\"color: rgb(148, 124, 171);box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">平替方案：</span></strong></span><span leaf=\"\">如果预算有限，可以考虑国内团队推出的「可灵 Kling 1.5 Pro」。它同样支持声画同步，人物表演的控制细腻丰富，而价格仅为 Runway 的三分之一——5秒视频大约 ¥4。在保证相当质量的前提下，大幅降低了使用成本，非常适合需要高性价比视频生成的用户。另一方面，在开源领域，万象 2.1是不容错过的选择。这款阿里系开源模型提供了丰富的玩法，支持用户自定义许多参数，生成的视频质量也毫不逊色于商业产品。对于技术达人来说，万象 2.1 意味着更大的自由度和可控性。进阶提示：此外市面上还有一些针对特定场景的工具可以配合使用，比如 Weidu 擅长二维角色视频、Hailuo 在复杂动作生成上表现突出，大家可以根据具体需求与上述工具组合使用。总而言之，Runway Gen-3 引领了 AI 视频创作的风潮，如果资金充裕它能带来最佳效果；而可灵和万象等方案则让大众也能以更低成本玩转 AI 视频制作。</span></p><p style=\"white-space: normal;margin: 0px;padding: 0px;box-sizing: border-box;\"><span leaf=\"\"><br  /></span></p><p style=\"text-align: center;white-space: normal;margin: 0px;padding: 0px;box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">4.配音神器：MiniMax</span></strong></p></section><section style=\"margin: 0.5em 0px;box-sizing: border-box;\"><section style=\"border-top: 4px solid rgb(110, 125, 146);box-sizing: border-box;\"><svg viewbox=\"0 0 1 1\" style=\"float:left;line-height:0;width:0;vertical-align:top;\"></svg></section><section style=\"margin: 3px 0px 0px;border-top: 1px solid rgb(110, 125, 146);box-sizing: border-box;\"><svg viewbox=\"0 0 1 1\" style=\"float:left;line-height:0;width:0;vertical-align:top;\"></svg></section></section><section style=\"color: rgb(110, 125, 146);box-sizing: border-box;\"><p style=\"white-space: normal;margin: 16px 0px 24px;padding: 0px;box-sizing: border-box;\"><span style=\"color: rgb(148, 124, 171);box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">简介：</span></strong></span><span leaf=\"\">MiniMax 是一款平价高效的 AI 配音（TTS）工具，特别适合需要将文字转化为语音的场景，比如视频解说、课程配音、有声读物制作等。它由国内团队开发，每月订阅费用 ¥36，却能够合成长达 2 小时的语音内容。操作上非常简单：输入文字即可生成自然流畅的语音，如果对声音风格有特殊要求，还可以用自然语言指令调整音色和语气（例如“语气更激情”或“声音更沉稳”）。对于经费紧张但又想提升内容品质的创作者来说，MiniMax 可谓物美价廉的配音利器。</span></p><p style=\"white-space: normal;margin: 0px 0px 24px;padding: 0px;box-sizing: border-box;\"><span style=\"color: rgb(148, 124, 171);box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">优点：</span></strong></span><span leaf=\"\">价格亲民，效果出众是 MiniMax 最明显的优势。对比传统真人配音或昂贵的商用TTS服务，MiniMax 以每月几顿外卖的钱就能搞定大部分日常配音需求，性价比极高。生成的声音自然度在中文领域表现优异，吐词清晰、情感恰当，完全可以媲美专业配音人员。更难得的是，它支持用简单的中文描述来微调声音效果，让不懂技术的用户也能玩转音色定制。对于需要频繁制作解说视频或音频节目的自媒体打工人来说，MiniMax 简直是救星，既省下了请配音的开支，又大大节省了时间。</span></p><p style=\"white-space: normal;margin: 0px 0px 24px;padding: 0px;box-sizing: border-box;\"><span style=\"color: rgb(148, 124, 171);box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">缺点：</span></strong></span><span leaf=\"\">MiniMax 目前主要侧重中文及部分常见语言的合成，在多语言（尤其是英文）方面的表现相对一般。如果你的项目需要高质量的英语配音，ElevenLabs也许是更好的选择——它在外语语音的自然度上更胜一筹。不过 ElevenLabs 对国内用户来说有网络和价格门槛，需要翻墙访问且收费较高。相较之下，MiniMax 虽然在外语上略逊一筹，但胜在使用便利和成本低廉，对于中文内容制作为主的用户来说已经绰绰有余。</span></p><p style=\"white-space: normal;margin: 0px 0px 24px;padding: 0px;box-sizing: border-box;\"><span style=\"color: rgb(148, 124, 171);box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">开源替代：</span></strong></span><span leaf=\"\">喜欢自行搭建或对音频技术感兴趣的用户，可以关注开源项目Fish Speech或Index TTS等。这些工具提供了语音克隆和文本转语音的能力，经过适当训练可以模仿特定人的声音，甚至将录音转成别的声音，玩法非常多。不过，上手开源方案需要一定技术门槛和硬件支持，一般用户不妨安心用 MiniMax 这类现成服务就好。总之，MiniMax 以极低的门槛让人人都能拥有自己的“AI 声优”，对于内容创作者来说实在值得一试。</span></p><p style=\"white-space: normal;margin: 0px;padding: 0px;box-sizing: border-box;\"><span leaf=\"\"><br  /></span></p><p style=\"text-align: center;white-space: normal;margin: 0px;padding: 0px;box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">5.音乐生成霸主：Suno</span></strong></p></section><section style=\"margin: 0.5em 0px;box-sizing: border-box;\"><section style=\"border-top: 4px solid rgb(110, 125, 146);box-sizing: border-box;\"><svg viewbox=\"0 0 1 1\" style=\"float:left;line-height:0;width:0;vertical-align:top;\"></svg></section><section style=\"margin: 3px 0px 0px;border-top: 1px solid rgb(110, 125, 146);box-sizing: border-box;\"><svg viewbox=\"0 0 1 1\" style=\"float:left;line-height:0;width:0;vertical-align:top;\"></svg></section></section><section style=\"color: rgb(110, 125, 146);box-sizing: border-box;\"><p style=\"white-space: normal;margin: 16px 0px 24px;padding: 0px;box-sizing: border-box;\"><span style=\"color: rgb(148, 124, 171);box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">简介：</span></strong></span><span leaf=\"\">Suno 是当前 AI 音乐创作领域当之无愧的霸主。借助 Suno，你只需简单描述曲风或哼唱几句旋律，就能让 AI 在几秒钟内生成一首原创乐曲——无论是流行歌曲、小调旋律还是背景配乐，都不在话下。令人惊喜的是，Suno 生成的音乐质量震撼级：旋律动听、节奏契合，甚至还能搭配和声、人声演唱等元素，听起来相当完整。对于缺乏音乐创作技巧但有创意想法的用户来说，Suno 就像一座可依赖的“AI 作曲家”。无论你是想给视频配乐，还是单纯娱乐地“整点音乐”，Suno 都能满足你的需求。</span></p><p style=\"white-space: normal;margin: 0px 0px 24px;padding: 0px;box-sizing: border-box;\"><span style=\"color: rgb(148, 124, 171);box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">优点：</span></strong></span><span leaf=\"\">Suno 最吸引人的地方在于低门槛高产出。它提供了足够的免费额度，基本上每天能生成十首曲子，让用户可以尽情试验各种音乐点子。而其付费会员每月约 $10，也足以满足深度玩家的需求。相较于传统音乐制作需要的专业知识和设备，Suno 几乎把创作复杂音乐的门槛降到了零。更难得的是，Suno 生成的音乐风格多样，从电子、古典到摇滚，都能根据提示呈现相应风味，很多用户听完直呼“这竟然是 AI 写的？”</span></p><p style=\"white-space: normal;margin: 0px 0px 24px;padding: 0px;box-sizing: border-box;\"><span style=\"color: rgb(148, 124, 171);box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">缺点：</span></strong></span><span leaf=\"\">对于一般用户而言，Suno 已经非常强大，但对于专业音乐人来说，它缺乏精细编辑控制可能是个不足。生成的音乐通常是一气呵成，如果你想对某一段落、某一乐器做细节调整，直接在 Suno 上并不容易实现。这时候可以考虑配合传统的数字音频工作站（DAW）来后期编辑。</span></p><p style=\"white-space: normal;margin: 0px 0px 24px;padding: 0px;box-sizing: border-box;\"><span style=\"color: rgb(148, 124, 171);box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">进阶选择：</span></strong></span><span leaf=\"\">如果你对音乐有精细化创作需求，可以尝试更专业的 AI 作曲工具Udio。Udio 支持将音乐分段生成，允许用户指定每一段的情绪和配器，并对音高、节奏进行微调，非常适合有一定音乐理论基础的专业玩家。当然，相应地，Udio 的使用成本和复杂度也比 Suno 更高。对于大部分人而言，Suno 已经足够拿来日常玩音乐：它让五音不全的小白也能创作出像模像样的曲子，让音乐创作真正走向大众化。正如很多网友所说：“有了 Suno，人人都可以当音乐人！”</span></p><p style=\"white-space: normal;margin: 0px;padding: 0px;box-sizing: border-box;\"><span leaf=\"\"><br  /></span></p><p style=\"text-align: center;white-space: normal;margin: 0px;padding: 0px;box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">6.AI浏览器新锐：Arc</span></strong></p></section><section style=\"margin: 0.5em 0px;box-sizing: border-box;\"><section style=\"border-top: 4px solid rgb(110, 125, 146);box-sizing: border-box;\"><svg viewbox=\"0 0 1 1\" style=\"float:left;line-height:0;width:0;vertical-align:top;\"></svg></section><section style=\"margin: 3px 0px 0px;border-top: 1px solid rgb(110, 125, 146);box-sizing: border-box;\"><svg viewbox=\"0 0 1 1\" style=\"float:left;line-height:0;width:0;vertical-align:top;\"></svg></section></section><section style=\"color: rgb(110, 125, 146);box-sizing: border-box;\"><p style=\"white-space: normal;margin: 16px 0px 24px;padding: 0px;box-sizing: border-box;\"><span style=\"color: rgb(148, 124, 171);box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">简介：</span></strong></span><span leaf=\"\">Arc 浏览器以其清新的界面设计和独特的使用理念闻名，如今更是在浏览器中深度整合了 AI 助手，为用户带来颠覆性的上网新体验。在 Arc 中，你可以方便地让 AI 总结当前网页内容、生成阅读笔记，或者直接对网页提出问题，AI 会以上下文相关的方式给出解答。这意味着，当你浏览一篇看不懂的专业文章时，无需再复制文本去找外部 AI 翻译解释——Arc 内置的智能助手会即时为你服务，再也没有比这更顺滑的体验了。2025 年的互联网冲浪，浏览器里没个 AI 助手都不好意思说自己上网。Arc 正是引领这一潮流的产品，让用户感叹“用了就回不去”。</span></p><p style=\"white-space: normal;margin: 0px 0px 24px;padding: 0px;box-sizing: border-box;\"><span style=\"color: rgb(148, 124, 171);box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">优点：</span></strong></span><span leaf=\"\">Arc 提供了舒适优雅的 UI和无缝衔接的 AI 功能。界面上采用了革新的侧边栏和空间概念，让多任务浏览井井有条，深受专业人士喜爱。同时内置的 AI 模块（Arc AI/Arc Max）支持多种强大功能：一键摘要网页、智能写作协助、跨标签内容查询等等，将浏览器变成了用户的智能助手。这样的整合让信息获取效率大大提升，再也不需要在网页和聊天机器人之间来回切换，工作流简洁高效。对于经常需要网上查资料、阅读文献的用户来说，Arc 的这套组合简直如虎添翼。</span></p><p style=\"white-space: normal;margin: 0px 0px 24px;padding: 0px;box-sizing: border-box;\"><span style=\"color: rgb(148, 124, 171);box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">缺点：</span></strong></span><span leaf=\"\">作为一款新兴浏览器，Arc 当前主要面向欧美市场，国内用户使用时在本地化方面可能略有不足（如界面语言、对国产网页的适配等）。此外，从习惯了 Chrome/Firefox 转换过来需要一点学习成本，Arc 独特的交互方式可能刚上手时会让人有些摸不着头脑。但这些都不是大问题，多用几天就习惯了。对于无法使用 Arc 的用户，国内也有一些替代方案。</span></p><p style=\"white-space: normal;margin: 0px 0px 24px;padding: 0px;box-sizing: border-box;\"><span style=\"color: rgb(148, 124, 171);box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">国产平替：</span></strong></span><span leaf=\"\">夸克浏览器和字节系的豆包浏览器都在积极布局 AI 功能。如果你偏好熟悉的国产产品环境，它们内置的 AI 助手在日常使用中也完全够用。例如夸克已经支持智能搜索摘要、智能问答等，豆包则是字节跳动体系的通用 AI 平台，也提供浏览器插件式的助手服务。虽然在界面打磨和创新性上不及 Arc，但胜在使用门槛低、兼容国内网页环境好。总的来说，现在上网装个带 AI 的浏览器已经是刚需，Arc 也好，夸克/豆包也罢，选一个顺手的用起来，你会发现信息获取和网络工作的效率提升了不止一个档次。</span></p><p style=\"white-space: normal;margin: 0px;padding: 0px;box-sizing: border-box;\"><span leaf=\"\"><br  /></span></p><p style=\"text-align: center;white-space: normal;margin: 0px;padding: 0px;box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">7.编程首席助手：Cursor，平替：字节Trae</span></strong></p></section><section style=\"margin: 0.5em 0px;box-sizing: border-box;\"><section style=\"border-top: 4px solid rgb(110, 125, 146);box-sizing: border-box;\"><svg viewbox=\"0 0 1 1\" style=\"float:left;line-height:0;width:0;vertical-align:top;\"></svg></section><section style=\"margin: 3px 0px 0px;border-top: 1px solid rgb(110, 125, 146);box-sizing: border-box;\"><svg viewbox=\"0 0 1 1\" style=\"float:left;line-height:0;width:0;vertical-align:top;\"></svg></section></section><section style=\"color: rgb(110, 125, 146);box-sizing: border-box;\"><p style=\"white-space: normal;margin: 16px 0px 24px;padding: 0px;box-sizing: border-box;\"><span style=\"color: rgb(148, 124, 171);box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">简介：</span></strong></span><span leaf=\"\">Cursor 是当前广受开发者欢迎的一款AI 编程助手，集成在代码编辑器/IDE 中，致力于提升编程效率和代码质量。安装 Cursor 后，你在编码时就仿佛多了一个贴身的智能“队友”：它能根据上下文自动补全代码、检测错误并给出修改建议，甚至帮你解释复杂的代码逻辑或生成文档注释。当遇到棘手的问题时，你也可以直接用自然语言向 Cursor 提问，它会利用内置的大模型为你分析问题、提供解决思路。这对于程序员来说，无疑是如虎添翼的体验；而即便你不是专业开发者，借助 Cursor 你也可以更轻松地写一些小脚本或代码来自动化工作。</span></p><p style=\"white-space: normal;margin: 0px 0px 24px;padding: 0px;box-sizing: border-box;\"><span style=\"color: rgb(148, 124, 171);box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">优点：</span></strong></span><span leaf=\"\">Cursor 被誉为“程序员首选”是有道理的。首先，它性能稳定，无论项目大小都能流畅运行，不会因为调用 AI 服务而频繁卡顿。其次，Cursor 的开发团队非常给力，更新迭代快，不断引入最新的模型和功能，这也使其始终保持业界领先。例如，当新的更强大的编程模型出现时，Cursor 常常能第一时间支持，让用户总能用上“最聪明的大脑”写代码。此外，Cursor 在界面和功能细节上也针对开发者做了优化，尽可能融入现有的编码工作流，不会打断你的思路。总之，使用过 Cursor 的工程师普遍反映编码效率显著提升，再也回不去没有 AI 辅助的“石器时代”编程了。</span></p><p style=\"white-space: normal;margin: 0px 0px 24px;padding: 0px;box-sizing: border-box;\"><span style=\"color: rgb(148, 124, 171);box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">缺点：</span></strong></span><span leaf=\"\">Cursor 本身可能需要订阅或使用自己的 API Key，成本是需要考虑的一方面（高级模型的调用费用不菲）。对于业余编程爱好者或学生来说，如果预算有限，可能无法长期开启最高等级的 AI 服务。另外，有些特殊或过于本地化的编程场景下，AI 可能不如人类有针对性（比如国内的某些业务框架，AI 训练语料较少）。不过这些问题并不妨碍 Cursor 在主流编程任务中的出色表现。</span></p><p style=\"white-space: normal;margin: 0px 0px 24px;padding: 0px;box-sizing: border-box;\"><span style=\"color: rgb(148, 124, 171);box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">平价替代：</span></strong></span><span leaf=\"\">如果你在寻找更实惠的替代方案，可以尝试一下Trae这款新晋 AI 编程 IDE。Trae 基于 VS Code 打造，内置了强大的代码补全和问答能力。它最大的亮点之一是提供了“Slo 模式”（可能是较慢但便宜的模型选项），让用户可以以极低的成本使用 AI 辅助。尽管性能稍逊顶级模型，但胜在价格友好。Trae 在产品细节上也颇下功夫，界面美观，默认模型针对中文做了一些优化。据用户反馈，即使是非程序员，用 Trae 来写点简单脚本或技术文章也很顺手，因为它就像一个贴心的文字编辑助手。起步价极低甚至免费，降低了 AI 编程助手的入门门槛。总而言之，针对编程任务，Cursor 是追求极致效率和功能的首选，而 Trae 则让更多人以更低成本体验到 AI 编程助手的魅力。</span></p><p style=\"white-space: normal;margin: 0px;padding: 0px;box-sizing: border-box;\"><span leaf=\"\"><br  /></span></p><p style=\"text-align: center;white-space: normal;margin: 0px;padding: 0px;box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">8.最佳个人知识环境：NotebookLM</span></strong></p></section><section style=\"margin: 0.5em 0px;box-sizing: border-box;\"><section style=\"border-top: 4px solid rgb(110, 125, 146);box-sizing: border-box;\"><svg viewbox=\"0 0 1 1\" style=\"float:left;line-height:0;width:0;vertical-align:top;\"></svg></section><section style=\"margin: 3px 0px 0px;border-top: 1px solid rgb(110, 125, 146);box-sizing: border-box;\"><svg viewbox=\"0 0 1 1\" style=\"float:left;line-height:0;width:0;vertical-align:top;\"></svg></section></section><section style=\"color: rgb(110, 125, 146);box-sizing: border-box;\"><p style=\"white-space: normal;margin: 16px 0px 24px;padding: 0px;box-sizing: border-box;\"><span style=\"color: rgb(148, 124, 171);box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">简介：</span></strong></span><span leaf=\"\">NotebookLM 是 Google 推出的实验性 AI 知识库助手，旨在充当用户的“第二大脑”，帮助整理和吸收海量信息。它的工作方式是：你可以将大量文档、笔记、PDF 等资料导入 NotebookLM，随后 AI 会对这些资料进行理解、关联和总结。你可以像和助手对话一样向其提问，让它基于资料内容回答你的问题，甚至生成某个主题的汇总报告。在学习或研究场景下，这太实用了——比如学生备考时丢进几本教材，它能提炼出重点并解答疑惑；研究人员查文献时，它能概括几十篇论文的主要发现。更厉害的是，NotebookLM 不仅会给你文字总结，还可以生成类似播客那样的口述讲解，让你以更轻松的方式获取知识。难怪有人感叹：“NotebookLM 谁不用谁亏！”这可是提升学习效率的神器。</span></p><p style=\"white-space: normal;margin: 0px 0px 24px;padding: 0px;box-sizing: border-box;\"><span style=\"color: rgb(148, 124, 171);box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">优点：</span></strong></span><span leaf=\"\">多资料整合能力是 NotebookLM 最惊艳的特性。传统笔记或知识管理工具更多是存储，而 NotebookLM 则能“理解”你存进去的东西，并进行跨资料的关联分析。它能自动给出材料的概要、大纲，提取出关键信息点，还能根据你的提问从资料堆里找出对应答案。对于同时处理多本书、多篇论文的人来说，这相当于拥有了一个不知疲倦的私人助理，帮你梳理繁杂的信息。NotebookLM 对中文的支持随着底层模型改进也越来越好，再加上和 Google 自家服务（如 Docs、Drive）的联动，相信未来会成为学术界和知识工作者的标配工具。</span></p><p style=\"white-space: normal;margin: 0px 0px 24px;padding: 0px;box-sizing: border-box;\"><span style=\"color: rgb(148, 124, 171);box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">缺点：</span></strong></span><span leaf=\"\">目前 NotebookLM 仍处于测试阶段，普通用户获取资格可能需要一些等待。而且由于需要将资料上传云端，对于特别敏感的内部文档，很多机构可能出于隐私考虑不会使用。另外，它的强大也依赖于资料质量——垃圾数据太多的话，AI 生成的总结也可能偏离主题。所以使用时仍需一些人工甄别。</span></p><p style=\"white-space: normal;margin: 0px 0px 24px;padding: 0px;box-sizing: border-box;\"><span style=\"color: rgb(148, 124, 171);box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">国产优势：</span></strong></span><span leaf=\"\">在知识管理和企业知识库领域，国内也有不错的解决方案可以结合 AI 使用。个人用户可以关注Cubox这款笔记/收藏工具，它引入了 AI 摘要和智能分类功能，非常适合日常信息的积累和整理。企业用户则强烈推荐飞书：飞书不仅是办公即时通讯工具，还是强大的知识库平台，最近更集成了类 GPT 的智能助手和自动化功能。用飞书搭建企业知识库，可以实现员工提问，AI 在公司文档中找答案的效果，大大提高信息共享效率。而且飞书同时兼顾了知识库 + Agent + IM，在国内办公软件中独树一帜，颇具未来感。总而言之，善用这些 AI 知识管理工具，你会明显感觉到学习和工作的信息处理效率提升，以前需要几个小时翻资料才能搞定的事，现在也许问一问 AI 就解决了。</span></p><p style=\"white-space: normal;margin: 0px;padding: 0px;box-sizing: border-box;\"><span leaf=\"\"><br  /></span></p><p style=\"text-align: center;white-space: normal;margin: 0px;padding: 0px;box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">9.最佳研究伙伴：DeepResearch</span></strong></p></section><section style=\"margin: 0.5em 0px;box-sizing: border-box;\"><section style=\"border-top: 4px solid rgb(110, 125, 146);box-sizing: border-box;\"><svg viewbox=\"0 0 1 1\" style=\"float:left;line-height:0;width:0;vertical-align:top;\"></svg></section><section style=\"margin: 3px 0px 0px;border-top: 1px solid rgb(110, 125, 146);box-sizing: border-box;\"><svg viewbox=\"0 0 1 1\" style=\"float:left;line-height:0;width:0;vertical-align:top;\"></svg></section></section><section style=\"color: rgb(110, 125, 146);box-sizing: border-box;\"><p style=\"white-space: normal;margin: 16px 0px 24px;padding: 0px;box-sizing: border-box;\"><span style=\"color: rgb(148, 124, 171);box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">简介：</span></strong></span><span leaf=\"\">在今年 Agent（智能体）概念大火的背景下，DeepResearch 脱颖而出，成为少数真正实用的通用智能 Agent之一。顾名思义，DeepResearch 特别擅长深度调查研究类的任务，OpenAI的ChatGPT、谷歌的Gemini和Anthropic的Claude都有DeepResearch，都赌上身家，配备了各自最先进和强大的思考模型，且基本不分伯仲、各有千秋。当你需要对一个陌生课题进行全面调研、或者对某个复杂问题追根溯源时，可以把这个“苦差事”交给 DeepResearch。它会自动帮你上网搜索、爬取相关信息，阅读分析后给出结构化的调研报告或结论。比如你想了解“某种新材料的最新研究进展”，DeepResearch 可以帮你搜罗论文和新闻、提炼要点，最终输出一篇总结报告，省去了你东拼西凑资料的时间。有人把它比作信息界的“私家侦探”——哪里有有用信息，它就潜入哪里替你挖掘出来。对于需要经常写报告、做竞品分析或学术综述的人来说，DeepResearch 简直是一件梦寐以求的利器。</span></p><p style=\"white-space: normal;margin: 0px 0px 24px;padding: 0px;box-sizing: border-box;\"><span style=\"color: rgb(148, 124, 171);box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">特点：</span></strong></span><span leaf=\"\">DeepResearch 之所以引人注目，不仅因为它在特定场景下很好用，还因为目前市面上缺少好用的通用 Agent 产品。很多号称 Agent 的新工具，要么功能片面要么不够智能，实际利用率并不高。而 DeepResearch 则用实战证明了智能 Agent 的价值。它将强大的 GPT-4 类模型与搜索引擎相结合，既有大模型的语言理解和生成能力，又有联网获取最新资料的能力，真正做到学以致用。实测中，DeepResearch 在科技、商业等领域的调研任务上表现出色，输出内容详实有据，往往还附带参考资料来源，令人倍感安心。</span></p><p style=\"white-space: normal;margin: 0px 0px 24px;padding: 0px;box-sizing: border-box;\"><span style=\"color: rgb(148, 124, 171);box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">使用建议：</span></strong></span><span leaf=\"\">对一般用户来说，DeepResearch 并不是每天都会用到的工具，但一旦遇到需要深度调查的场景，它就是你的秘密武器。需要注意的是，它毕竟是 AI，如果碰到一些需要高度专业判断的地方，还需自己把关。另外，对于常规的日常任务，其实没有必要动用 DeepResearch 大材小用——直接用 ChatGPT 或类似的大模型回答就够了（很多人平时索性把 GPT-4 当通用 Agent 来用）。DeepResearch 更适合那种你自己都无从下手的大课题，一键下单让 AI 满世界去帮你找答案。总的来说，在智能 Agent 方兴未艾的2025年，DeepResearch 用实力证明了“AI 调研员”是可行且有价值的，值得有这类需求的专业人士尝试。</span></p><p style=\"white-space: normal;margin: 0px;padding: 0px;box-sizing: border-box;\"><span leaf=\"\"><br  /></span></p><p style=\"text-align: center;white-space: normal;margin: 0px;padding: 0px;box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">10.自动化流程神器：n8n</span></strong></p></section><section style=\"margin: 0.5em 0px;box-sizing: border-box;\"><section style=\"border-top: 4px solid rgb(110, 125, 146);box-sizing: border-box;\"><svg viewbox=\"0 0 1 1\" style=\"float:left;line-height:0;width:0;vertical-align:top;\"></svg></section><section style=\"margin: 3px 0px 0px;border-top: 1px solid rgb(110, 125, 146);box-sizing: border-box;\"><svg viewbox=\"0 0 1 1\" style=\"float:left;line-height:0;width:0;vertical-align:top;\"></svg></section></section><section style=\"color: rgb(110, 125, 146);box-sizing: border-box;\"><p style=\"white-space: normal;margin: 16px 0px 24px;padding: 0px;box-sizing: border-box;\"><span style=\"color: rgb(148, 124, 171);box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">简介：</span></strong></span><span leaf=\"\">n8n 是一款开源的自动化工作流工具，被许多极客誉为“国产 Zapier 替代”。它可以让你在不怎么用代码的情况下，把各种应用和任务串联起来，搭建自动化流程。举个例子，你可以用 n8n 设定这样一个工作流：监控邮箱收件箱 -&gt; 自动解析邮件内容 -&gt; 调用 AI 撰写回复 -&gt; 定时发送回复邮件。所有这些步骤都能在 n8n 的可视化界面中拖拽配置完成，非常酷！n8n 提供了上百种常见服务的集成节点（从数据库、短信服务到各类云应用），也支持调用 API 和脚本，所以可玩性极高。对于想要偷懒又苦于重复机械性工作的人来说，n8n 简直就是福音——许多以前需要手动完成的琐事，现在设置好工作流后AI+自动化帮你 24 小时跑,真正实现“解放双手”。</span></p><p style=\"white-space: normal;margin: 0px 0px 24px;padding: 0px;box-sizing: border-box;\"><span style=\"color: rgb(148, 124, 171);box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">优点：</span></strong></span><span leaf=\"\">n8n 的最大优点就是开源免费且高度可定制。不像商业平台那样调用受限，你可以将 n8n 部署在自己的服务器上，按需安装插件节点，实现完全属于你自己的自动化“机器人”。它的社区也很活跃，已经有大量现成的流程模板可供参考。一旦投入时间把常用流程搭建好，n8n 会源源不断地为你节约时间、人力成本——有人形容第一次用 n8n 跑完一个繁琐流程时，那种感觉就像突然拥有了一个只知道干活不抱怨的免费助手，非常畅快。对于团队和企业来说，n8n 也提供了比 SaaS 更灵活的数据保障，重要数据可以在内部流转，不必担心隐私泄漏。</span></p><p style=\"white-space: normal;margin: 0px 0px 24px;padding: 0px;box-sizing: border-box;\"><span style=\"color: rgb(148, 124, 171);box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">缺点：</span></strong></span><span leaf=\"\">需要指出的是，n8n 并非完全零门槛。虽然它提供了图形化界面，但想充分利用其强大功能，你仍需要一些技术基础，比如了解 API、Webhook 等概念，否则初次配置时可能会摸不着头脑。相对于傻瓜式的自动化工具，n8n 更像是给具有一定编程/脚本功底的人用的“半成品工具包”。此外，部署在本地或服务器上也需要一定运维知识。不过一旦度过了这个学习期，n8n 将会大幅提升你的工作效率，很多重复劳动将从此告别人工。正所谓“磨刀不误砍柴工”，前期多花点时间折腾 n8n，很快你就能尝到自动化带来的甜头。</span></p><p style=\"white-space: normal;margin: 0px 0px 24px;padding: 0px;box-sizing: border-box;\"><span style=\"color: rgb(148, 124, 171);box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">应用场景与替代：</span></strong></span><span leaf=\"\">n8n 在科技互联网从业者中人气很高。如果你觉得搭建麻烦，市面上也有一些云端自动化服务（如 Zapier、IFTTT、腾讯云函数等）可供选择，但要么收费高要么不够灵活。n8n 的优势就在于白嫖和自定义。对于每天被各种重复表格、数据搬运、通知发送搞得头大的“打工人”来说，n8n 可谓效率提升的救星——花点时间配置好，日后它将乖乖替你干活，再枯燥无聊的任务它也不会喊累。相信在未来，会有越来越多的职场人士意识到自动化的价值，把像 n8n 这样的工具纳入自己的技能清单。</span></p></section><p style=\"white-space: normal;margin: 0px;padding: 0px;box-sizing: border-box;\"><span leaf=\"\"><br  /></span></p><section style=\"display: flex;width: 100%;flex-flow: column;box-sizing: border-box;\"><section style=\"z-index: 1;box-sizing: border-box;\"><section style=\"text-align: center;justify-content: center;display: flex;flex-flow: row;margin: 10px 0px -30px;box-sizing: border-box;\"><section style=\"display: inline-block;vertical-align: middle;width: auto;min-width: 5%;max-width: 100%;flex: 0 0 auto;height: auto;align-self: center;margin: 0px -11px 0px 0px;box-sizing: border-box;\"><section style=\"display: flex;width: 100%;flex-flow: column;box-sizing: border-box;\"><section style=\"z-index: 1;box-sizing: border-box;\"><section style=\"margin: 0px;line-height: 0;box-sizing: border-box;\"><section style=\"max-width: 100%;vertical-align: middle;display: inline-block;line-height: 0;width: 28px;height: auto;box-sizing: border-box;\"><img class=\"rich_pages wxw-img\" data-ratio=\"2.322\" data-s=\"300,640\" data-type=\"png\" data-w=\"500\" style=\"vertical-align: middle;max-width: 100%;width: 100%;box-sizing: border-box;height: auto !important;\" data-imgfileid=\"310695457\" data-aistatus=\"1\" data-src=\"https://mmbiz.qpic.cn/sz_mmbiz_png/WibdHHtZA7kicsSh9aPdiaUEiczItrYgE5OiaRBa6f5DhFn0D4iagjfrN3UJCnl54bNggsTrSsWe04Jsd7HiaoR1GPusQ/640?wx_fmt=png&amp;from=appmsg\"  /></section></section></section></section></section><section style=\"display: inline-block;vertical-align: middle;width: auto;align-self: center;flex: 0 0 auto;min-width: 5%;max-width: 100%;height: auto;box-sizing: border-box;\"><section style=\"justify-content: center;display: flex;flex-flow: row;box-sizing: border-box;\"><section style=\"display: inline-block;vertical-align: middle;width: auto;flex: 0 0 0%;height: auto;align-self: center;line-height: 0;box-sizing: border-box;\"><section style=\"box-sizing: border-box;\"><section style=\"display: inline-block;width: 11px;height: 22px;vertical-align: top;overflow: hidden;border-top-left-radius: 19px;border-bottom-left-radius: 19px;background-color: rgb(234, 64, 9);box-sizing: border-box;\"><section style=\"text-align: justify;box-sizing: border-box;\"><p style=\"white-space: normal;margin: 0px;padding: 0px;box-sizing: border-box;\"><span leaf=\"\"><br  /></span></p></section></section></section></section><section style=\"display: inline-block;vertical-align: middle;width: auto;align-self: center;flex: 0 0 auto;background-color: rgb(234, 64, 9);margin: 0px -3px;border-style: solid;border-width: 0px;border-radius: 6px;overflow: hidden;min-width: 5%;max-width: 100%;height: auto;padding: 7px 12px 7px 11px;box-sizing: border-box;\"><section style=\"text-align: left;justify-content: flex-start;display: flex;flex-flow: row;box-sizing: border-box;\"><section style=\"display: inline-block;vertical-align: middle;width: auto;align-self: center;flex: 0 0 auto;min-width: 5%;max-width: 100%;height: auto;box-sizing: border-box;\"><section style=\"text-align: center;margin: 0px;line-height: 0;box-sizing: border-box;\"><section style=\"max-width: 100%;vertical-align: middle;display: inline-block;line-height: 0;width: 13px;height: auto;box-sizing: border-box;\"><img class=\"rich_pages wxw-img\" data-ratio=\"1.65\" data-s=\"300,640\" data-type=\"png\" data-w=\"500\" style=\"vertical-align: middle;max-width: 100%;width: 100%;box-sizing: border-box;height: auto !important;\" data-imgfileid=\"310695456\" data-aistatus=\"1\" data-src=\"https://mmbiz.qpic.cn/sz_mmbiz_png/WibdHHtZA7kicsSh9aPdiaUEiczItrYgE5Oia29hiaOgMfam7M84aWV7ru3ibvGqTYvv7zwo1jSMvgvbmLWgUoZWT42JA/640?wx_fmt=png&amp;from=appmsg\"  /></section></section></section><section style=\"display: inline-block;vertical-align: middle;width: auto;align-self: center;flex: 0 0 auto;min-width: 5%;max-width: 100%;height: auto;padding: 0px 0px 0px 7px;box-sizing: border-box;\"><section style=\"text-align: justify;color: rgb(255, 255, 255);box-sizing: border-box;\"><p style=\"white-space: normal;margin: 0px;padding: 0px;box-sizing: border-box;\"><strong style=\"box-sizing: border-box;\"><span leaf=\"\">&nbsp; &nbsp;总 结 &nbsp;&nbsp;</span></strong></p></section></section></section></section><section style=\"display: inline-block;vertical-align: middle;width: auto;flex: 0 0 0%;height: auto;align-self: center;line-height: 0;box-sizing: border-box;\"><section style=\"transform: perspective(0px);-webkit-transform: perspective(0px);-moz-transform: perspective(0px);-o-transform: perspective(0px);transform-style: flat;box-sizing: border-box;\"><section style=\"transform: rotateY(180deg);-webkit-transform: rotateY(180deg);-moz-transform: rotateY(180deg);-o-transform: rotateY(180deg);box-sizing: border-box;\"><section style=\"display: inline-block;width: 11px;height: 22px;vertical-align: top;overflow: hidden;border-top-left-radius: 19px;border-bottom-left-radius: 19px;background-color: rgb(234, 64, 9);box-sizing: border-box;\"><section style=\"text-align: justify;box-sizing: border-box;\"><p style=\"white-space: normal;margin: 0px;padding: 0px;box-sizing: border-box;\"><span leaf=\"\"><br  /></span></p></section></section></section></section></section></section></section><section style=\"display: inline-block;vertical-align: middle;width: auto;min-width: 5%;max-width: 100%;flex: 0 0 auto;height: auto;align-self: center;margin: 0px 0px 0px -52px;box-sizing: border-box;\"><section style=\"display: flex;width: 100%;flex-flow: column;box-sizing: border-box;\"><section style=\"z-index: auto;box-sizing: border-box;\"><section style=\"margin: 20px 0px -4px;line-height: 0;box-sizing: border-box;\"><section style=\"max-width: 100%;vertical-align: middle;display: inline-block;line-height: 0;width: 67px;height: auto;box-sizing: border-box;\"><img class=\"rich_pages wxw-img\" data-ratio=\"0.42479108635097496\" data-s=\"300,640\" data-type=\"png\" data-w=\"718\" style=\"vertical-align: middle;max-width: 100%;width: 100%;box-sizing: border-box;height: auto !important;\" data-imgfileid=\"310695455\" data-aistatus=\"1\" data-src=\"https://mmbiz.qpic.cn/sz_mmbiz_png/WibdHHtZA7kicsSh9aPdiaUEiczItrYgE5Oiamn77GJFj4xSicULUia1HuiagpAZGf7t7N8JdwcicMUw42YFLa3vPsrBFBA/640?wx_fmt=png&amp;from=appmsg\"  /></section></section></section></section></section></section></section></section><section style=\"text-align: center;justify-content: center;display: flex;flex-flow: row;margin: 0px 0px 7px;width: 100%;align-self: flex-start;background-color: rgb(255, 246, 236);border-style: solid;border-width: 1px;border-color: rgb(252, 220, 168);border-radius: 9px;overflow: hidden;padding: 37px 19px 19px;height: auto;box-sizing: border-box;\"><section style=\"margin: 0px;width: 100%;box-sizing: border-box;\"><section style=\"text-align: justify;color: rgb(110, 125, 146);width: 100%;box-sizing: border-box;\"><p style=\"white-space: normal;margin: 0px;padding: 0px;box-sizing: border-box;\"><span leaf=\"\">总的来说，我们大可不必追逐每一个新冒出的 AI 应用。只要在常用领域选定一个好用的“首选”工具，在非高频需求上用平价“平替”搭配使用，就足以覆盖 95% 的工作和学习场景。剩下那 5% 特殊且棘手的问题，再临时利用 AI 去定向搜索和解决即可。这样的组合拳不但经济高效，而且实践证明完全可行。今年的 AI 工具百花齐放，但真正能长期提高生产力的也就这些。与其疲于奔命追新，不如把这些公认好用的工具吃透用熟。希望本年度榜单能帮助你筛选出最适合自己的 AI 好帮手，让 2026年的你工作更聪明、生活更轻松！</span></p></section></section></section></section><p style=\"display: none;\"><mp-style-type data-value=\"3\"></mp-style-type></p>",
+          "pubtime": "2026-01-02 08:01:17"
+        }
+      }
+    ],
+    "数据分析": [
+      {
+        "json": {
+          "code": 0,
+          "msg": "success",
+          "data": {
+            "read": 1657,
+            "zan": 39,
+            "looking": 38,
+            "share_num": 243,
+            "collect_num": 157,
+            "comment_count": 2
+          },
+          "cost_money": 0.06,
+          "remain_money": 4.605
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "apikey配置",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "微信搜一搜查询": {
+      "main": [
+        [
+          {
+            "node": "Split Out1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out1": {
+      "main": [
+        [
+          {
+            "node": "查询是否存在 ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "获取全文和数据": {
+      "main": [
+        [
+          {
+            "node": "数据分析",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "文章内容总结 ",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "读取关键词": {
+      "main": [
+        [
+          {
+            "node": "微信搜一搜查询",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "数据分析": {
+      "main": [
+        [
+          {
+            "node": "初步过滤",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "文章内容总结 ": {
+      "main": [
+        [
+          {
+            "node": "Date & Time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "初步过滤": {
+      "main": [
+        [],
+        [
+          {
+            "node": "文章内容总结 ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Date & Time": {
+      "main": [
+        [
+          {
+            "node": "Date & Time1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Date & Time1": {
+      "main": [
+        [
+          {
+            "node": "登记选题",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "apikey配置": {
+      "main": [
+        [
+          {
+            "node": "读取关键词",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "查询是否存在 ": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "获取全文和数据",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "75b2d3d9-900b-4fc4-9dbf-1452e7de64e0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4ec3133c8d628113a824c66a73c5bdda7b94b0762c5189e937dc7ec53c5a43ee"
+  },
+  "id": "n3o1FtblRX8ROmfX",
+  "tags": []
+}
